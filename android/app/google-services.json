@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "61791313148",
+    "project_id": "stockingapp-f2a9c",
+    "storage_bucket": "stockingapp-f2a9c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:61791313148:android:15893524606513e7f04b79",
+        "android_client_info": {
+          "package_name": "com.AS.Stocking"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDqrY4ESLw6Q2QzTrSbyzPANfo7IWnW_gI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:61791313148:android:511a120189eafb43f04b79",
+        "android_client_info": {
+          "package_name": "com.stockingapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDqrY4ESLw6Q2QzTrSbyzPANfo7IWnW_gI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
