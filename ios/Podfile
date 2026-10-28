@@ -23,18 +23,27 @@ target 'StockingApp' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
-  target 'StockingAppTests' do
-    inherit! :complete
-    # Pods for testing
-  end
+  # Google Sign-In's AppCheckCore is a Swift pod that imports these
+  # Objective-C pods, so they need module maps.
+  pod 'GoogleUtilities', :modular_headers => true
+  pod 'RecaptchaInterop', :modular_headers => true
 
   post_install do |installer|
-    # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
     react_native_post_install(
       installer,
       config[:reactNativePath],
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    # React Native raises each pod's deployment target, but not their resource
+    # bundle targets, which Xcode 27 rejects when they're below iOS 15.
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < min_ios_version_supported.to_f
+          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = min_ios_version_supported
+        end
+      end
+    end
   end
 end

@@ -7,103 +7,78 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import React, {useCallback, useEffect, useState} from 'react';
-import {container, vh, vw} from '../../services/styleSheet';
+import React, {useEffect, useRef, useState} from 'react';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import {container, vh, vw} from '../../services/styleSheet';
 import {backIcon} from '../../assets/svgXML';
-import useStatusBar from '../../services/useStatusBar';
-import {useFocusEffect, useNavigation} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import OTPTextInput from 'react-native-otp-textinput';
-import {PermissionsAndroid, Platform} from 'react-native';
-import {Notifications} from 'react-native-notifications';
+import {
+  requestNotificationPermission,
+  showNotification,
+} from '../../services/notifications';
+import {useSession} from '../../services/session';
+import {useI18n} from '../../services/i18n';
+
+export const OTP_LENGTH = 5;
+const OTP_TTL_MS = 5 * 60 * 1000;
+
+type Params = {purpose: 'reset' | 'phone'; email?: string; phone?: string};
 
 const OtpVerify = () => {
-  useStatusBar('#1A1A1A');
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  const route = useRoute();
+  const {purpose, email, phone} = route.params as Params;
+  const {t} = useI18n();
+  const {setPhone} = useSession();
   const [otp, setOtp] = useState('');
-  const [generatedOtp, setGeneratedOtp] = useState('');
-  const [otpBackgroundColors, setOtpBackgroundColors] = useState<string[]>([
-    'black',
-    'black',
-    'black',
-    'black',
-    'black',
-  ]);
+  const issued = useRef<{code: string; expires: number} | null>(null);
+
+  const sendCode = async () => {
+    const code = String(Math.floor(10000 + Math.random() * 90000));
+    issued.current = {code, expires: Date.now() + OTP_TTL_MS};
+    if (await requestNotificationPermission()) {
+      showNotification(
+        t('otp.notificationTitle'),
+        t('otp.notificationBody', {code}),
+      );
+    } else {
+      // Without notifications there's no other channel on-device.
+      Alert.alert(t('otp.fallbackTitle'), t('otp.fallbackBody', {code}));
+    }
+  };
 
   useEffect(() => {
-    const requestNotificationPermission = async () => {
-      if (Platform.OS === 'android') {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
-          {
-            title: 'Notification Permission',
-            message: 'This app needs access to show notifications.',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
-          },
-        );
-        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-          console.log('Notification permission granted');
-        } else {
-          console.log('Notification permission denied');
-        }
-      }
-    };
-
-    requestNotificationPermission();
+    sendCode();
+    // Send once when the screen opens; "Resend" handles the rest.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const sendNotification = () => {
-    const randomOtp = Math.floor(10000 + Math.random() * 90000).toString();
-    setGeneratedOtp(randomOtp);
-    // Post a local notification
-    Notifications.postLocalNotification({
-      title: 'OTP Xác Minh Tài Khoản',
-      body: `Xin hãy nhập số OTP ${randomOtp} để xác minh tài khoản của bạn`,
-      sound: 'chime.aiff',
-      identifier: '',
-      payload: undefined,
-      badge: 0,
-      type: '',
-      thread: '',
-    });
-  };
-
-  useFocusEffect(
-    useCallback(() => {
-      sendNotification();
-      return () => {
-        // Clean up any listeners if necessary
-      };
-    }, []),
-  );
-
-  const handleOtpChange = (otpValue: string) => {
-    setOtp(otpValue);
-  };
-
-  const handleCellTextChange = (text: string, index: number) => {
-    const newBackgroundColors = [...otpBackgroundColors];
-    newBackgroundColors[index] = text ? 'yellow' : 'black';
-    setOtpBackgroundColors(newBackgroundColors);
-  };
-
-  const handleVerify = () => {
-    // Add your OTP verification logic here
-    if (otp.length === 5 && otp === generatedOtp) {
-      navigation.navigate('PasswordModifying');
+  const handleVerify = async () => {
+    const current = issued.current;
+    if (!current || Date.now() > current.expires) {
+      Alert.alert(t('otp.invalidTitle'), t('otp.expired'));
+      return;
+    }
+    if (otp !== current.code) {
+      Alert.alert(t('otp.invalidTitle'), t('otp.invalid'));
+      return;
+    }
+    issued.current = null;
+    if (purpose === 'reset') {
+      navigation.replace('PasswordModifying', {step: 'reset', email});
     } else {
-      console.log('OTP lỗi');
-      // Show an alert for invalid OTP
-      Alert.alert('OTP lỗi', 'Sai OTP, vui lòng nhập lại');
+      await setPhone(phone!);
+      Alert.alert(t('common.success'), t('phone.verified'), [
+        {text: t('common.ok'), onPress: () => navigation.popTo('Account')},
+      ]);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView>
+      <ScrollView keyboardShouldPersistTaps="handled">
         <View style={styles.phoneContainer}>
           <TouchableOpacity
             style={styles.btnBack}
@@ -111,27 +86,33 @@ const OtpVerify = () => {
             {backIcon(vw(7), vw(7))}
           </TouchableOpacity>
           <View style={{rowGap: vh(1)}}>
-            <Text style={styles.label}>Nhập mã xác minh</Text>
-            <Text style={styles.desp}>
-              Chúng tôi đã gửi mã xác minh đến số điện thoại di động của bạn
-            </Text>
+            <Text style={styles.label}>{t('otp.title')}</Text>
+            <Text style={styles.desp}>{t('otp.desc')}</Text>
           </View>
           <View>
             <OTPTextInput
-              handleTextChange={handleOtpChange}
-              inputCount={5}
+              handleTextChange={setOtp}
+              inputCount={OTP_LENGTH}
               containerStyle={styles.otpContainer}
               textInputStyle={styles.otpInput}
               tintColor="#FFED4B"
               offTintColor="#FFED4B"
-              handleCellTextChange={handleCellTextChange}
             />
           </View>
-          <TouchableOpacity onPress={sendNotification}>
-            <Text style={{color: '#FFED4B', fontWeight: '600'}}>Gửi lại</Text>
+          <TouchableOpacity testID="otp-resend" onPress={sendCode}>
+            <Text style={{color: '#FFED4B', fontWeight: '600'}}>
+              {t('otp.resend')}
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.btnSendOTP} onPress={handleVerify}>
-            <Text style={styles.btnOtptxt}>Xác minh tài khoản</Text>
+          <TouchableOpacity
+            testID="otp-verify"
+            style={[
+              styles.btnSendOTP,
+              otp.length < OTP_LENGTH && {backgroundColor: '#d3d3d3'},
+            ]}
+            disabled={otp.length < OTP_LENGTH}
+            onPress={handleVerify}>
+            <Text style={styles.btnOtptxt}>{t('otp.verify')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

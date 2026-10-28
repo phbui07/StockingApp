@@ -1,6 +1,7 @@
 import React from 'react';
 import {View, Text, StyleSheet, ActivityIndicator} from 'react-native';
 import {vh, vw} from '../services/styleSheet';
+import {useI18n} from '../services/i18n';
 
 interface LoadingComponentProps {
   message?: string;
@@ -9,30 +10,34 @@ interface LoadingComponentProps {
 }
 
 const LoadingComponent: React.FC<LoadingComponentProps> = ({
-  message = 'Đang tải...',
+  message,
   size = 'large',
   color = '#FFED4B',
 }) => {
+  const {t} = useI18n();
   return (
     <View style={styles.container}>
       <View style={styles.loadingBox}>
         <ActivityIndicator size={size} color={color} />
-        <Text style={styles.loadingText}>{message}</Text>
+        <Text style={styles.loadingText}>{message ?? t('common.loading')}</Text>
       </View>
     </View>
   );
 };
 
 const LoadingOverlay: React.FC<LoadingComponentProps> = ({
-  message = 'Đang xử lý...',
+  message,
   size = 'large',
   color = '#FFED4B',
 }) => {
+  const {t} = useI18n();
   return (
     <View style={styles.overlay}>
       <View style={styles.overlayContent}>
         <ActivityIndicator size={size} color={color} />
-        <Text style={styles.overlayText}>{message}</Text>
+        <Text style={styles.overlayText}>
+          {message ?? t('common.processing')}
+        </Text>
       </View>
     </View>
   );

@@ -9,23 +9,20 @@ import {
 import React, {useState} from 'react';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {container, vh, vw} from '../../services/styleSheet';
-import useStatusBar from '../../services/useStatusBar';
 import PhoneInput from 'react-native-phone-input';
 import CountryPicker from 'react-native-country-picker-modal';
 import {backIcon} from '../../assets/svgXML';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {useI18n} from '../../services/i18n';
 
 const PhoneVerify = () => {
-  useStatusBar('#1A1A1A');
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  const {t} = useI18n();
   const phoneRef = React.useRef<PhoneInput>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [countryCode, setCountryCode] = useState('VN');
   const [modalVisible, setModalVisible] = useState(false);
 
   const onSelect = (selectedCountry: any) => {
-    setCountryCode(selectedCountry.cca2);
     if (phoneRef.current) {
       phoneRef.current.selectCountry(selectedCountry.cca2.toLowerCase());
     }
@@ -37,9 +34,12 @@ const PhoneVerify = () => {
 
   const handlePress = () => {
     if (phoneRef.current && phoneRef.current.isValidNumber()) {
-      navigation.navigate('OtpVerify');
+      navigation.navigate('OtpVerify', {
+        purpose: 'phone',
+        phone: phoneRef.current.getValue(),
+      });
     } else {
-      Alert.alert('Số điện thoại không phù hợp', 'Hãy nhập lại số điện thoại');
+      Alert.alert(t('phone.invalidTitle'), t('phone.invalidDesc'));
     }
   };
 
@@ -53,10 +53,8 @@ const PhoneVerify = () => {
             {backIcon(vw(7), vw(7))}
           </TouchableOpacity>
           <View style={{rowGap: vh(1)}}>
-            <Text style={styles.label}>Nhập số điện thoại</Text>
-            <Text style={styles.desp}>
-              Bạn sẽ nhận được mã gồm 4 chữ số để xác minh số điện thoại
-            </Text>
+            <Text style={styles.label}>{t('phone.title')}</Text>
+            <Text style={styles.desp}>{t('phone.desc')}</Text>
           </View>
           <PhoneInput
             ref={phoneRef}
@@ -77,8 +75,11 @@ const PhoneVerify = () => {
               countryCode={'VN'}
             />
           )}
-          <TouchableOpacity onPress={handlePress} style={styles.btnSendOTP}>
-            <Text style={styles.btnOtptxt}>Gửi mã</Text>
+          <TouchableOpacity
+            testID="phone-send"
+            onPress={handlePress}
+            style={styles.btnSendOTP}>
+            <Text style={styles.btnOtptxt}>{t('phone.send')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
