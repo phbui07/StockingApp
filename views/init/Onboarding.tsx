@@ -13,14 +13,13 @@ import {
 import React, {useEffect, useRef, useState} from 'react';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {centerAll, container, vh, vw} from '../../services/styleSheet';
-import useStatusBar from '../../services/useStatusBar';
 import {stocklineIcon} from '../../assets/svgXML';
 import {InitPageData} from '../../services/renderData';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {useI18n} from '../../services/i18n';
 
 const Onboarding = () => {
-  useStatusBar('#1A1A1A');
   const [showMainLayout, setShowMainLayout] = useState(false);
 
   useEffect(() => {
@@ -42,6 +41,7 @@ const Onboarding = () => {
 
 const MainLayout: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  const {t} = useI18n();
   const [currentPage, setCurrentPage] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
@@ -63,7 +63,7 @@ const MainLayout: React.FC = () => {
   return (
     <View style={{paddingVertical: vh(2), flex: 1}}>
       <TouchableOpacity onPress={handleSkipPress} style={styles.btnSkip}>
-        <Text style={styles.skipTxT}>Bỏ qua</Text>
+        <Text style={styles.skipTxT}>{t('onboarding.skip')}</Text>
       </TouchableOpacity>
       <View style={[styles.upperView, centerAll]}>
         <Image style={styles.mainImg} source={InitPageData[currentPage].img} />
@@ -80,8 +80,8 @@ const MainLayout: React.FC = () => {
           onMomentumScrollEnd={handleMomentumScrollEnd}
           renderItem={({item}) => (
             <View style={{width: vw(90), rowGap: vh(2)}}>
-              <Text style={styles.lowerTitle}>{item.title}</Text>
-              <Text style={styles.lowerdescription}>{item.description}</Text>
+              <Text style={styles.lowerTitle}>{t(item.title)}</Text>
+              <Text style={styles.lowerdescription}>{t(item.description)}</Text>
             </View>
           )}
         />
@@ -95,21 +95,23 @@ const MainLayout: React.FC = () => {
         </View>
         <View style={styles.groupBtnBottom}>
           <TouchableOpacity
+            testID="onboarding-login"
             onPress={() => {
               navigation.navigate('Login');
             }}
             style={[styles.btnLogin, centerAll]}>
             <Text style={[styles.btnBottomTxt, {color: '#FFED4B'}]}>
-              Đăng nhập
+              {t('onboarding.login')}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
+            testID="onboarding-signup"
             onPress={() => {
               navigation.navigate('SignUp');
             }}
             style={[styles.btnSignUp, centerAll]}>
             <Text style={[styles.btnBottomTxt, {color: '#1A1A1A'}]}>
-              Đăng ký
+              {t('onboarding.signup')}
             </Text>
           </TouchableOpacity>
         </View>

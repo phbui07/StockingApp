@@ -1,124 +1,69 @@
-/* eslint-disable react-native/no-inline-styles */
 import {
-  Image,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
-  TextInput,
-  RefreshControl,
 } from 'react-native';
-import React, {useState, useCallback} from 'react';
+import React, {useState} from 'react';
 import {container, vh, vw} from '../../services/styleSheet';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import useStatusBar from '../../services/useStatusBar';
 import {
   addIcon,
-  arrowUpIcon,
   arrowDownIcon,
+  arrowUpIcon,
   viewIcon,
 } from '../../assets/svgXML';
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {useQuotes} from '../../services/quoteStore';
+import {useUserData} from '../../services/userData';
+import {Holding, summarize} from '../../services/portfolio';
+import {TKey, useI18n} from '../../services/i18n';
+import {changeColor, formatMoney, formatPercent} from '../../services/format';
+import StockLogo from '../../components/StockLogo';
 
-interface StockItem {
-  id: string;
-  name: string;
-  shortName: string;
-  logo: any;
-  quantity: number;
-  buyPrice: number;
-  currentPrice: number;
-  totalValue: number;
-  change: number;
-  changePercent: number;
-}
+type Filter = 'all' | 'gainers' | 'losers';
+type Nav = NativeStackNavigationProp<any>;
 
-const mockStockData: StockItem[] = [
-  {
-    id: '1',
-    name: 'Apple Inc.',
-    shortName: 'AAPL',
-    logo: require('../../assets/home/apple.png'),
-    quantity: 10,
-    buyPrice: 140.0,
-    currentPrice: 142.26,
-    totalValue: 1422.6,
-    change: 22.6,
-    changePercent: 1.61,
-  },
-  {
-    id: '2',
-    name: 'Netflix Inc.',
-    shortName: 'NFLX',
-    logo: require('../../assets/home/netflix.png'),
-    quantity: 5,
-    buyPrice: 700.0,
-    currentPrice: 722.26,
-    totalValue: 3611.3,
-    change: 111.3,
-    changePercent: 3.18,
-  },
-  {
-    id: '3',
-    name: 'Facebook Inc.',
-    shortName: 'FB',
-    logo: require('../../assets/home/facebook.png'),
-    quantity: 8,
-    buyPrice: 330.0,
-    currentPrice: 343.6,
-    totalValue: 2748.8,
-    change: 108.8,
-    changePercent: 4.12,
-  },
-  {
-    id: '4',
-    name: 'Amazon, Inc.',
-    shortName: 'AMZN',
-    logo: require('../../assets/home/amazon.png'),
-    quantity: 3,
-    buyPrice: 3200.0,
-    currentPrice: 3156.13,
-    totalValue: 9468.39,
-    change: -131.61,
-    changePercent: -1.37,
-  },
+const FILTERS: {key: Filter; label: TKey}[] = [
+  {key: 'all', label: 'holdings.all'},
+  {key: 'gainers', label: 'holdings.gainers'},
+  {key: 'losers', label: 'holdings.losers'},
 ];
 
 const Stock = () => {
-  useStatusBar('#1A1A1A');
+  const navigation = useNavigation<Nav>();
+  const {t} = useI18n();
+  const {data} = useUserData();
+  const {quotes, refresh} = useQuotes(Object.keys(data.portfolio.positions));
+  const summary = summarize(data.portfolio, quotes);
   const [searchText, setSearchText] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [selectedFilter, setSelectedFilter] = useState<Filter>('all');
   const [refreshing, setRefreshing] = useState(false);
 
-  const onRefresh = useCallback(() => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    // Simulate API call to refresh data
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1500);
-  }, []);
+    await refresh();
+    setRefreshing(false);
+  };
 
-  const totalPortfolioValue = mockStockData.reduce(
-    (sum, stock) => sum + stock.totalValue,
-    0,
-  );
-  const totalGainLoss = mockStockData.reduce(
-    (sum, stock) => sum + stock.change,
-    0,
-  );
-  const totalGainLossPercent = (totalGainLoss / totalPortfolioValue) * 100;
-
-  const filteredStocks = mockStockData.filter(stock => {
-    const matchesSearch = stock.name
-      .toLowerCase()
-      .includes(searchText.toLowerCase());
+  const query = searchText.trim().toLowerCase();
+  const filtered = summary.holdings.filter(holding => {
+    const {symbol, name} = holding.position;
+    const matches =
+      !query ||
+      symbol.toLowerCase().includes(query) ||
+      name.toLowerCase().includes(query);
     if (selectedFilter === 'gainers') {
-      return matchesSearch && stock.change > 0;
+      return matches && holding.pnl > 0;
     }
     if (selectedFilter === 'losers') {
-      return matchesSearch && stock.change < 0;
+      return matches && holding.pnl < 0;
     }
-    return matchesSearch;
+    return matches;
   });
 
   return (
@@ -133,163 +78,145 @@ const Stock = () => {
             colors={['#FFED4B']}
           />
         }>
-        <Header />
-        <PortfolioSummary
-          totalValue={totalPortfolioValue}
-          gainLoss={totalGainLoss}
-          gainLossPercent={totalGainLossPercent}
-        />
-        <SearchAndFilter
-          searchText={searchText}
-          setSearchText={setSearchText}
-          selectedFilter={selectedFilter}
-          setSelectedFilter={setSelectedFilter}
-        />
-        <StocksList stocks={filteredStocks} />
+        <View style={styles.headerContainer}>
+          <Text style={styles.headerText}>{t('holdings.title')}</Text>
+          <TouchableOpacity
+            testID="holdings-add"
+            accessibilityRole="button"
+            accessibilityLabel={t('search.titleView')}
+            style={styles.addButton}
+            onPress={() => navigation.navigate('Search', {mode: 'buy'})}>
+            {addIcon(vw(6), vw(6), '#1A1A1A')}
+          </TouchableOpacity>
+        </View>
+        <View style={styles.summaryContainer}>
+          <Text style={styles.summaryLabel}>{t('holdings.totalValue')}</Text>
+          <Text testID="holdings-value" style={styles.summaryValue}>
+            {formatMoney(summary.holdingsValue)}
+          </Text>
+          <View style={styles.gainLossContainer}>
+            <View
+              style={[
+                styles.changeIndicator,
+                {backgroundColor: changeColor(summary.unrealizedPnL)},
+              ]}>
+              {summary.unrealizedPnL >= 0
+                ? arrowUpIcon(vw(4), vw(4), '#FFFFFF')
+                : arrowDownIcon(vw(4), vw(4), '#FFFFFF')}
+            </View>
+            <Text
+              style={[
+                styles.gainLossText,
+                {color: changeColor(summary.unrealizedPnL)},
+              ]}>
+              {formatMoney(summary.unrealizedPnL, {signed: true})} (
+              {formatPercent(summary.unrealizedPercent)})
+            </Text>
+          </View>
+          <Text style={styles.cashText}>
+            {t('holdings.cashAvailable', {amount: formatMoney(summary.cash)})}
+          </Text>
+        </View>
+        <View style={styles.searchFilterContainer}>
+          <View style={styles.searchBox}>
+            {viewIcon(vw(5), vw(5))}
+            <TextInput
+              style={styles.searchInput}
+              placeholder={t('holdings.search')}
+              placeholderTextColor="#76787E"
+              value={searchText}
+              onChangeText={setSearchText}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+          <View style={styles.filterContainer}>
+            {FILTERS.map(filter => (
+              <TouchableOpacity
+                key={filter.key}
+                style={[
+                  styles.filterButton,
+                  selectedFilter === filter.key && styles.activeFilter,
+                ]}
+                onPress={() => setSelectedFilter(filter.key)}>
+                <Text
+                  style={[
+                    styles.filterText,
+                    selectedFilter === filter.key && styles.activeFilterText,
+                  ]}>
+                  {t(filter.label)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+        <View style={styles.stocksListContainer}>
+          <Text style={styles.sectionTitle}>
+            {t('holdings.count', {count: filtered.length})}
+          </Text>
+          {summary.holdings.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>{t('holdings.empty')}</Text>
+              <Text style={styles.emptySubText}>{t('holdings.emptyDesc')}</Text>
+              <TouchableOpacity
+                style={styles.cta}
+                onPress={() => navigation.navigate('Search', {mode: 'buy'})}>
+                <Text style={styles.ctaText}>{t('portfolio.findStocks')}</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            filtered.map(holding => (
+              <StockCard
+                key={holding.position.symbol}
+                holding={holding}
+                onPress={() =>
+                  navigation.navigate('ChartInfor', {
+                    symbol: holding.position.symbol,
+                  })
+                }
+              />
+            ))
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-const Header: React.FC = () => {
+const StockCard: React.FC<{holding: Holding; onPress: () => void}> = ({
+  holding,
+  onPress,
+}) => {
+  const {t} = useI18n();
+  const {position} = holding;
+  const color = changeColor(holding.pnl);
   return (
-    <View style={styles.headerContainer}>
-      <Text style={styles.headerText}>Danh mục sở hữu</Text>
-      <TouchableOpacity style={styles.addButton}>
-        {addIcon(vw(6), vw(6), '#1A1A1A')}
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-const PortfolioSummary: React.FC<{
-  totalValue: number;
-  gainLoss: number;
-  gainLossPercent: number;
-}> = ({totalValue, gainLoss, gainLossPercent}) => {
-  return (
-    <View style={styles.summaryContainer}>
-      <Text style={styles.summaryLabel}>Tổng giá trị danh mục</Text>
-      <Text style={styles.summaryValue}>${totalValue.toFixed(2)}</Text>
-      <View style={styles.gainLossContainer}>
-        <View
-          style={[
-            styles.changeIndicator,
-            {backgroundColor: gainLoss >= 0 ? '#5DC172' : '#FF4444'},
-          ]}>
-          {gainLoss >= 0
-            ? arrowUpIcon(vw(4), vw(4), '#FFFFFF')
-            : arrowDownIcon(vw(4), vw(4), '#FFFFFF')}
-        </View>
-        <Text
-          style={[
-            styles.gainLossText,
-            {color: gainLoss >= 0 ? '#5DC172' : '#FF4444'},
-          ]}>
-          {gainLoss >= 0 ? '+' : ''}${gainLoss.toFixed(2)} (
-          {gainLossPercent.toFixed(2)}%)
-        </Text>
-      </View>
-    </View>
-  );
-};
-
-const SearchAndFilter: React.FC<{
-  searchText: string;
-  setSearchText: (text: string) => void;
-  selectedFilter: string;
-  setSelectedFilter: (filter: string) => void;
-}> = ({searchText, setSearchText, selectedFilter, setSelectedFilter}) => {
-  const filters = [
-    {key: 'all', label: 'Tất cả'},
-    {key: 'gainers', label: 'Tăng'},
-    {key: 'losers', label: 'Giảm'},
-  ];
-
-  return (
-    <View style={styles.searchFilterContainer}>
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBox}>
-          {viewIcon(vw(5), vw(5))}
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Tìm kiếm cổ phiếu..."
-            placeholderTextColor="#76787E"
-            value={searchText}
-            onChangeText={setSearchText}
-          />
-        </View>
-      </View>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterContainer}>
-        {filters.map(filter => (
-          <TouchableOpacity
-            key={filter.key}
-            style={[
-              styles.filterButton,
-              selectedFilter === filter.key && styles.activeFilter,
-            ]}
-            onPress={() => setSelectedFilter(filter.key)}>
-            <Text
-              style={[
-                styles.filterText,
-                selectedFilter === filter.key && styles.activeFilterText,
-              ]}>
-              {filter.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
-  );
-};
-
-const StocksList: React.FC<{stocks: StockItem[]}> = ({stocks}) => {
-  return (
-    <View style={styles.stocksListContainer}>
-      <Text style={styles.sectionTitle}>Cổ phiếu sở hữu ({stocks.length})</Text>
-      {stocks.map(stock => (
-        <StockCard key={stock.id} stock={stock} />
-      ))}
-    </View>
-  );
-};
-
-const StockCard: React.FC<{stock: StockItem}> = ({stock}) => {
-  return (
-    <View style={styles.stockCard}>
+    <TouchableOpacity
+      testID={`holding-${position.symbol}`}
+      style={styles.stockCard}
+      onPress={onPress}>
       <View style={styles.stockCardLeft}>
-        <Image source={stock.logo} style={styles.stockLogo} />
+        <StockLogo symbol={position.symbol} size={vw(12)} />
         <View style={styles.stockInfo}>
-          <Text style={styles.stockName}>{stock.shortName}</Text>
-          <Text style={styles.stockFullName}>{stock.name}</Text>
-          <Text style={styles.stockQuantity}>{stock.quantity} cổ phiếu</Text>
+          <Text style={styles.stockName}>{position.symbol}</Text>
+          <Text style={styles.stockFullName} numberOfLines={1}>
+            {position.name}
+          </Text>
+          <Text style={styles.stockQuantity}>
+            {t('common.shares', {count: position.shares})} ·{' '}
+            {t('holdings.avgCost', {price: formatMoney(position.avgCost)})}
+          </Text>
         </View>
       </View>
       <View style={styles.stockCardRight}>
-        <Text style={styles.stockValue}>${stock.totalValue.toFixed(2)}</Text>
-        <Text style={styles.stockPrice}>${stock.currentPrice.toFixed(2)}</Text>
-        <View style={styles.stockChangeContainer}>
-          <Text
-            style={[
-              styles.stockChange,
-              {color: stock.change >= 0 ? '#5DC172' : '#FF4444'},
-            ]}>
-            {stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)}
-          </Text>
-          <Text
-            style={[
-              styles.stockChangePercent,
-              {color: stock.change >= 0 ? '#5DC172' : '#FF4444'},
-            ]}>
-            ({stock.changePercent >= 0 ? '+' : ''}
-            {stock.changePercent.toFixed(2)}%)
-          </Text>
-        </View>
+        <Text style={styles.stockValue}>{formatMoney(holding.value)}</Text>
+        <Text style={styles.stockPrice}>{formatMoney(holding.price)}</Text>
+        <Text style={[styles.stockChange, {color}]}>
+          {formatMoney(holding.pnl, {signed: true})} (
+          {formatPercent(holding.pnlPercent)})
+        </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -348,11 +275,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
+  cashText: {
+    color: '#76787E',
+    fontSize: 12,
+    marginTop: vh(1),
+  },
   searchFilterContainer: {
     marginVertical: vh(2),
-  },
-  searchContainer: {
-    marginBottom: vh(1),
+    rowGap: vh(1),
   },
   searchBox: {
     flexDirection: 'row',
@@ -369,6 +299,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   filterContainer: {
+    flexDirection: 'row',
     columnGap: vw(2),
   },
   filterButton: {
@@ -400,6 +331,34 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: vh(2),
   },
+  emptyContainer: {
+    backgroundColor: '#2C2C2C',
+    borderRadius: vw(3),
+    padding: vw(6),
+    alignItems: 'center',
+    rowGap: vh(1),
+  },
+  emptyText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  emptySubText: {
+    color: '#76787E',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  cta: {
+    backgroundColor: '#FFED4B',
+    borderRadius: 16,
+    paddingVertical: vh(1.5),
+    paddingHorizontal: vw(8),
+    marginTop: vh(1),
+  },
+  ctaText: {
+    color: '#1A1A1A',
+    fontWeight: '600',
+  },
   stockCard: {
     backgroundColor: '#2C2C2C',
     borderRadius: vw(3),
@@ -413,12 +372,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-  },
-  stockLogo: {
-    width: vw(12),
-    height: vw(12),
-    borderRadius: vw(6),
-    marginRight: vw(3),
+    columnGap: vw(3),
   },
   stockInfo: {
     flex: 1,
@@ -449,15 +403,9 @@ const styles = StyleSheet.create({
     color: '#76787E',
     fontSize: 14,
   },
-  stockChangeContainer: {
-    alignItems: 'flex-end',
-    marginTop: vh(0.5),
-  },
   stockChange: {
     fontSize: 12,
     fontWeight: '500',
-  },
-  stockChangePercent: {
-    fontSize: 11,
+    marginTop: vh(0.5),
   },
 });

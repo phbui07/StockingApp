@@ -11,23 +11,18 @@ import React from 'react';
 import {centerAll, container, vh, vw} from '../../services/styleSheet';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {stocklineIcon} from '../../assets/svgXML';
-import {UserProfile} from '../../services/typeProps';
-import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-
-type WelcomeRouteProp = RouteProp<
-  {Welcome: {userData: UserProfile}},
-  'Welcome'
->;
+import {useSession} from '../../services/session';
+import {useUserData} from '../../services/userData';
+import {useI18n} from '../../services/i18n';
+import {formatMoney} from '../../services/format';
 
 const Welcome = () => {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const route = useRoute<WelcomeRouteProp>();
-  const user = route.params.userData;
-
-  const handleStart = () => () => {
-    navigation.navigate('Main');
-  };
+  const {t} = useI18n();
+  const {user} = useSession();
+  const {data} = useUserData();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -37,15 +32,25 @@ const Welcome = () => {
             {stocklineIcon(vw(20), vw(20))}
           </View>
           <Text style={styles.label}>
-            Xin chào {user.givenName ?? 'New User'}!{' '}
+            {t('welcome.hello', {
+              name: user?.givenName || user?.name || t('welcome.friend'),
+            })}{' '}
             <Image source={require('../../assets/init/wavingHand.png')} />
           </Text>
-          <Text style={styles.label}>Chào mừng tới Stockline</Text>
-          <Text style={styles.desp}>Thật tuyệt khi có bạn ở đây</Text>
+          <Text style={styles.label}>{t('welcome.title')}</Text>
+          <Text style={styles.desp}>
+            {t('welcome.subtitle', {
+              amount: formatMoney(data.portfolio.startingCash),
+            })}
+          </Text>
         </View>
-        <TouchableOpacity onPress={handleStart()}>
+        <TouchableOpacity
+          testID="welcome-start"
+          onPress={() =>
+            navigation.reset({index: 0, routes: [{name: 'Main'}]})
+          }>
           <View style={[centerAll, styles.btn]}>
-            <Text style={styles.btntxt}>Bắt đầu</Text>
+            <Text style={styles.btntxt}>{t('welcome.start')}</Text>
           </View>
         </TouchableOpacity>
       </ScrollView>
@@ -73,8 +78,10 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 22,
     fontWeight: '600',
+    textAlign: 'center',
   },
   desp: {
     color: '#76787E',
+    textAlign: 'center',
   },
 });

@@ -10,49 +10,73 @@ import {
 } from 'react-native';
 import React, {useState} from 'react';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import useStatusBar from '../../services/useStatusBar';
 import {container, vh, vw} from '../../services/styleSheet';
 import {backIcon} from '../../assets/svgXML';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {
+  isValidEmail,
+  MIN_PASSWORD_LENGTH,
+  normalizeEmail,
+  useSession,
+} from '../../services/session';
+import {useI18n} from '../../services/i18n';
+
+// Forgot-password flow: step "email" asks for the account, OtpVerify checks
+// a code sent to this device, then step "reset" sets the new password.
+type Params = {step?: 'email' | 'reset'; email?: string} | undefined;
 
 const PasswordModifying = () => {
-  useStatusBar('#1A1A1A');
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  const route = useRoute();
+  const {step = 'email', email: verifiedEmail} = (route.params as Params) ?? {};
+  const {t} = useI18n();
+  const {findAccount, resetPassword} = useSession();
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
 
-  const handleVerify = async () => {
-    // Regular expression to validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      // Show an alert in Vietnamese if the email is invalid
-      Alert.alert('Email không hợp lệ', 'Vui lòng nhập địa chỉ email hợp lệ.');
-    } else {
-      try {
-        // Call the Cloud Function to send the email
-        Alert.alert(
-          'Thành công',
-          'Mã xác minh đã được gửi đến email của bạn.',
-          [
-            {
-              text: 'OK',
-              onPress: () => navigation.navigate('Login'),
-            },
-          ],
-        );
-      } catch (error) {
-        console.error(error);
-        Alert.alert(
-          'Lỗi',
-          'Đã xảy ra lỗi khi gửi mã xác minh. Vui lòng thử lại.',
-        );
-      }
+  const sendCode = () => {
+    if (!isValidEmail(email)) {
+      Alert.alert(t('common.invalidEmail'));
+      return;
     }
+    const account = findAccount(email);
+    if (!account) {
+      Alert.alert(t('common.error'), t('forgot.notFound'));
+      return;
+    }
+    if (account.provider === 'google') {
+      Alert.alert(t('common.error'), t('forgot.googleAccount'));
+      return;
+    }
+    navigation.navigate('OtpVerify', {
+      purpose: 'reset',
+      email: normalizeEmail(email),
+    });
   };
+
+  const savePassword = async () => {
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      Alert.alert(t('common.error'), t('common.passwordTooShort'));
+      return;
+    }
+    if (password !== confirm) {
+      Alert.alert(t('common.error'), t('common.passwordMismatch'));
+      return;
+    }
+    await resetPassword(verifiedEmail!, password);
+    Alert.alert(t('common.success'), t('reset.success'), [
+      {text: t('common.ok'), onPress: () => navigation.popTo('Login')},
+    ]);
+  };
+
+  const isReset = step === 'reset' && !!verifiedEmail;
+  const ready = isReset ? !!(password && confirm) : !!email;
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView>
+      <ScrollView keyboardShouldPersistTaps="handled">
         <View style={styles.phoneContainer}>
           <TouchableOpacity
             style={styles.btnBack}
@@ -60,29 +84,60 @@ const PasswordModifying = () => {
             {backIcon(vw(7), vw(7))}
           </TouchableOpacity>
           <View style={{rowGap: vh(1)}}>
-            <Text style={styles.label}>Đổi mật khẩu</Text>
+            <Text style={styles.label}>
+              {t(isReset ? 'reset.title' : 'forgot.title')}
+            </Text>
             <Text style={styles.desp}>
-              Vui lòng nhập email đã đăng ký của bạn, chúng tôi sẽ gửi cho bạn
-              mã xác minh vào email
+              {isReset
+                ? t('reset.desc', {email: verifiedEmail})
+                : t('forgot.desc')}
             </Text>
           </View>
-          <View>
+          {isReset ? (
+            <>
+              <TextInput
+                testID="reset-password"
+                style={styles.otpInput}
+                placeholder={t('reset.newPassword')}
+                placeholderTextColor="#76787E"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+              <TextInput
+                testID="reset-confirm"
+                style={styles.otpInput}
+                placeholder={t('reset.confirmPassword')}
+                placeholderTextColor="#76787E"
+                value={confirm}
+                onChangeText={setConfirm}
+                secureTextEntry
+              />
+            </>
+          ) : (
             <TextInput
+              testID="forgot-email"
               style={styles.otpInput}
-              placeholder="Email"
+              placeholder={t('common.email')}
               placeholderTextColor="#76787E"
               value={email}
               onChangeText={setEmail}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
             />
-          </View>
+          )}
           <TouchableOpacity
+            testID="forgot-submit"
             style={[
               styles.btnSendOTP,
-              {backgroundColor: email ? '#FFED4B' : '#d3d3d3'},
+              {backgroundColor: ready ? '#FFED4B' : '#d3d3d3'},
             ]}
-            onPress={handleVerify}
-            disabled={!email}>
-            <Text style={styles.btnOtptxt}>Gửi mã xác nhận</Text>
+            onPress={isReset ? savePassword : sendCode}
+            disabled={!ready}>
+            <Text style={styles.btnOtptxt}>
+              {t(isReset ? 'reset.submit' : 'forgot.send')}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -128,7 +183,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     width: '100%',
     height: vw(15),
-    color: '#76787E',
+    color: '#FFFFFF',
     paddingHorizontal: vw(5),
   },
   btnSendOTP: {

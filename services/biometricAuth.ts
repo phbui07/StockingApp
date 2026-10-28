@@ -1,5 +1,5 @@
-import {Alert} from 'react-native';
-import ReactNativeBiometrics from 'react-native-biometrics';
+import ReactNativeBiometrics, {BiometryTypes} from 'react-native-biometrics';
+import {translateNow} from './i18n';
 
 const rnBiometrics = new ReactNativeBiometrics();
 
@@ -8,14 +8,24 @@ interface BiometricAuthResult {
   error?: string;
 }
 
+export type BiometryKind = 'faceId' | 'touchId' | 'fingerprint' | null;
+
 class BiometricAuth {
   static async checkBiometricAvailability(): Promise<{
     available: boolean;
-    biometryType?: string;
+    biometryType?: BiometryKind;
   }> {
     try {
       const {available, biometryType} = await rnBiometrics.isSensorAvailable();
-      return {available, biometryType};
+      const kinds: Record<string, BiometryKind> = {
+        [BiometryTypes.FaceID]: 'faceId',
+        [BiometryTypes.TouchID]: 'touchId',
+        [BiometryTypes.Biometrics]: 'fingerprint',
+      };
+      return {
+        available,
+        biometryType: biometryType ? kinds[biometryType] ?? null : null,
+      };
     } catch (error) {
       console.log('Biometric check error:', error);
       return {available: false};
@@ -23,7 +33,7 @@ class BiometricAuth {
   }
 
   static async authenticateWithBiometrics(
-    reason: string = 'Xác thực để tiếp tục',
+    reason: string = translateNow('bio.defaultReason'),
   ): Promise<BiometricAuthResult> {
     try {
       const {available} = await this.checkBiometricAvailability();
@@ -31,13 +41,13 @@ class BiometricAuth {
       if (!available) {
         return {
           success: false,
-          error: 'Thiết bị không hỗ trợ xác thực sinh trắc học',
+          error: translateNow('bio.notAvailable'),
         };
       }
 
       const {success} = await rnBiometrics.simplePrompt({
         promptMessage: reason,
-        cancelButtonText: 'Hủy',
+        cancelButtonText: translateNow('common.cancel'),
       });
 
       if (success) {
@@ -45,44 +55,16 @@ class BiometricAuth {
       } else {
         return {
           success: false,
-          error: 'Xác thực không thành công',
+          error: translateNow('bio.failed'),
         };
       }
     } catch (error) {
       console.log('Biometric auth error:', error);
       return {
         success: false,
-        error: 'Lỗi xác thực sinh trắc học',
+        error: translateNow('bio.error'),
       };
     }
-  }
-
-  static async authenticateForTransaction(
-    amount: number,
-    symbol: string,
-  ): Promise<BiometricAuthResult> {
-    const reason = `Xác thực để giao dịch ${symbol} với giá trị $${amount.toFixed(2)}`;
-    return await this.authenticateWithBiometrics(reason);
-  }
-
-  static showBiometricSetupAlert() {
-    Alert.alert(
-      'Thiết lập xác thực',
-      'Vui lòng thiết lập vân tay hoặc Face ID trong Cài đặt để sử dụng tính năng này.',
-      [
-        {
-          text: 'Hủy',
-          style: 'cancel',
-        },
-        {
-          text: 'Mở Cài đặt',
-          onPress: () => {
-            // In a real app, you would open settings
-            console.log('Open device settings');
-          },
-        },
-      ],
-    );
   }
 }
 

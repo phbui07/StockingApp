@@ -1,10 +1,10 @@
 /* eslint-disable react-native/no-inline-styles */
 import {
   Alert,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -12,219 +12,257 @@ import React, {useState} from 'react';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {centerAll, container, vh, vw} from '../../services/styleSheet';
 import {useNavigation, useRoute} from '@react-navigation/native';
-import {
-  PayMethodData,
-  StockHomeData3,
-  VerifyData,
-} from '../../services/renderData';
-import {backIcon} from '../../assets/svgXML';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import ReactNativeBiometrics from 'react-native-biometrics';
+import {getCachedQuote, useQuote} from '../../services/quoteStore';
+import {useUserData} from '../../services/userData';
+import {
+  maxAffordableShares,
+  OrderError,
+  TradeSide,
+} from '../../services/portfolio';
+import {isTradable} from '../../services/marketData';
+import BiometricAuth from '../../services/biometricAuth';
+import {TKey, useI18n} from '../../services/i18n';
+import {formatMoney} from '../../services/format';
+import ScreenHeader from '../../components/ScreenHeader';
+import StockLogo from '../../components/StockLogo';
+import {LoadingOverlay} from '../../components/LoadingComponent';
+
+const ERROR_KEYS: Record<OrderError['code'], TKey> = {
+  INVALID_QUANTITY: 'order.invalidQuantity',
+  INVALID_PRICE: 'order.priceUnavailable',
+  INSUFFICIENT_CASH: 'order.insufficientCash',
+  INSUFFICIENT_SHARES: 'order.insufficientShares',
+};
 
 const BuyingVerify = () => {
   const route = useRoute();
-  const {dataIndex} = route.params as {dataIndex: number};
+  const params = route.params as {symbol: string; side?: TradeSide};
+  const {symbol} = params;
+  const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  const {t} = useI18n();
+  const {data, placeOrder} = useUserData();
+  const {quote} = useQuote(symbol);
+  const owned = data.portfolio.positions[symbol]?.shares ?? 0;
+  const [side, setSide] = useState<TradeSide>(
+    params.side === 'SELL' && owned > 0 ? 'SELL' : 'BUY',
+  );
+  const [quantityText, setQuantityText] = useState('1');
+  const [processing, setProcessing] = useState(false);
+
+  const shares = Number(quantityText);
+  const price = quote?.price ?? 0;
+  const total = Number.isFinite(shares) ? shares * price : 0;
+  const cash = data.portfolio.cash;
+  const maxShares = side === 'BUY' ? maxAffordableShares(cash, price) : owned;
+  const cashAfter = side === 'BUY' ? cash - total : cash + total;
+  const sideLabel = t(side === 'BUY' ? 'trade.buy' : 'trade.sell');
+
+  const problem: TKey | null = !quote
+    ? 'order.priceUnavailable'
+    : !Number.isInteger(shares) || shares <= 0
+    ? 'order.invalidQuantity'
+    : side === 'BUY' && total > cash
+    ? 'order.insufficientCash'
+    : side === 'SELL' && shares > owned
+    ? 'order.insufficientShares'
+    : null;
+
+  const setShares = (value: number) =>
+    setQuantityText(String(Math.max(0, Math.floor(value))));
+
+  const execute = () => {
+    // Fill at the freshest price, which may have moved since the screen opened.
+    const latest = getCachedQuote(symbol) ?? quote;
+    if (!latest) {
+      Alert.alert(t('common.error'), t('order.priceUnavailable'));
+      return;
+    }
+    try {
+      const trade = placeOrder({
+        side,
+        symbol,
+        name: latest.name,
+        shares,
+        price: latest.price,
+      });
+      Alert.alert(
+        t('common.success'),
+        t(side === 'BUY' ? 'order.successBuy' : 'order.successSell', {
+          shares: trade.shares,
+          symbol,
+          price: formatMoney(trade.price),
+        }),
+        [{text: t('common.ok'), onPress: () => navigation.goBack()}],
+        {cancelable: false},
+      );
+    } catch (error) {
+      const key =
+        error instanceof OrderError ? ERROR_KEYS[error.code] : 'common.error';
+      Alert.alert(t('common.error'), t(key));
+    }
+  };
+
+  const handlePlaceOrder = async () => {
+    if (problem) {
+      Alert.alert(t('common.error'), t(problem));
+      return;
+    }
+    if (data.settings.biometricForTrades) {
+      const {available} = await BiometricAuth.checkBiometricAvailability();
+      if (available) {
+        setProcessing(true);
+        const result = await BiometricAuth.authenticateWithBiometrics(
+          t('order.authPrompt', {side: sideLabel.toLowerCase(), symbol}),
+        );
+        setProcessing(false);
+        if (result.success) {
+          execute();
+        } else {
+          Alert.alert(t('common.error'), t('order.authFailed'));
+        }
+        return;
+      }
+    }
+    Alert.alert(
+      t('order.confirmTitle', {side: sideLabel.toLowerCase()}),
+      t('order.confirmMessage', {
+        side: sideLabel,
+        shares,
+        symbol,
+        price: formatMoney(price),
+        total: formatMoney(total),
+      }),
+      [
+        {text: t('common.cancel'), style: 'cancel'},
+        {text: t('order.place'), onPress: execute},
+      ],
+    );
+  };
+
+  const rows: [string, string, string?][] = [
+    [t('order.marketPrice'), quote ? formatMoney(price) : '—'],
+    [t('order.quantity'), quantityText || '0'],
+    [t('order.estimatedTotal'), formatMoney(total), '#FFED4B'],
+    side === 'BUY'
+      ? [t('order.cashAvailable'), formatMoney(cash)]
+      : [t('order.sharesOwned'), String(owned)],
+    [t('order.cashAfter'), formatMoney(cashAfter)],
+    [t('order.fundingSource'), t('order.virtualAccount'), '#FFED4B'],
+  ];
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView>
-        <Header />
-        <View style={{paddingHorizontal: vw(5)}}>
-          <BannerView itemIndex={dataIndex} />
-        </View>
-        <PayMethod />
-      </ScrollView>
-    </SafeAreaView>
-  );
-};
-
-const PayMethod: React.FC = () => {
-  const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const [selectedMethod, setSelectedMethod] = useState<number | null>(null);
-
-  const selectRadioButton = (index: number) => {
-    setSelectedMethod(index);
-  };
-
-  const handleBuy = async () => {
-    const rnBiometrics = new ReactNativeBiometrics();
-
-    const {available} = await rnBiometrics.isSensorAvailable();
-
-    if (!available) {
-      Alert.alert(
-        'Lỗi',
-        'Xác thực sinh trắc học không khả dụng trên thiết bị này.',
-      );
-      return;
-    }
-
-    // Generate a key if it doesn't exist
-    const {keysExist} = await rnBiometrics.biometricKeysExist();
-
-    if (!keysExist) {
-      const {publicKey} = await rnBiometrics.createKeys();
-      console.log('Khóa công khai:', publicKey);
-    }
-
-    let epochTimeSeconds = Math.round(new Date().getTime() / 1000).toString();
-    let payload = epochTimeSeconds + 'some message';
-
-    rnBiometrics
-      .createSignature({
-        promptMessage: 'Xác minh danh tính của bạn',
-        payload: payload,
-      })
-      .then(resultObject => {
-        const {success, signature, error} = resultObject;
-
-        if (success) {
-          console.log(signature);
-          Alert.alert(
-            'Thành công',
-            'Giao dịch thành công.',
-            [
-              {
-                text: 'OK',
-                onPress: () => navigation.navigate('Main'), // Replace 'Main' with the actual name of your main screen
-              },
-            ],
-            {cancelable: false},
-          );
-          // verifySignatureWithServer(signature, payload);
-        } else {
-          console.error('Lỗi tạo chữ ký:', error);
-          Alert.alert('Lỗi', 'Không thể tạo chữ ký.');
-        }
-      })
-      .catch(error => {
-        console.error('Lỗi sinh trắc học:', error);
-        Alert.alert('Lỗi', 'Xác thực sinh trắc học thất bại.');
-      });
-  };
-
-  const isButtonDisabled = selectedMethod === null;
-
-  return (
-    <View style={{paddingHorizontal: vw(5), marginVertical: vh(2)}}>
-      <Text
-        style={{
-          color: '#FFFFFF',
-          fontSize: 18,
-          fontWeight: '600',
-          marginBottom: vh(2),
-        }}>
-        Phương thức thanh toán
-      </Text>
-      {PayMethodData.map((item, index) => {
-        return (
-          <View style={styles.cardContainer} key={index}>
-            <View style={styles.cardContainer1}>
-              <View style={styles.cardIcon}>{item.icon}</View>
-              <View>
-                <Text style={styles.whiteTxt}>{item.title}</Text>
-                <Text style={styles.greyTxt}>{item.description}</Text>
+      <ScrollView keyboardShouldPersistTaps="handled">
+        <ScreenHeader title={t('order.title')} />
+        <View style={{paddingHorizontal: vw(5), rowGap: vh(2)}}>
+          <View style={styles.sideToggle}>
+            {(['BUY', 'SELL'] as TradeSide[]).map(item => (
+              <TouchableOpacity
+                key={item}
+                testID={`order-side-${item}`}
+                disabled={item === 'SELL' && owned === 0}
+                style={[
+                  styles.sideBtn,
+                  side === item && {
+                    backgroundColor: item === 'BUY' ? '#FFED4B' : '#FF4444',
+                  },
+                  item === 'SELL' && owned === 0 && {opacity: 0.4},
+                ]}
+                onPress={() => setSide(item)}>
+                <Text
+                  style={[
+                    styles.sideText,
+                    side === item && {
+                      color: item === 'BUY' ? '#1A1A1A' : '#FFFFFF',
+                    },
+                  ]}>
+                  {t(item === 'BUY' ? 'trade.buy' : 'trade.sell')}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={styles.card}>
+            <View style={styles.stock3Container}>
+              <View style={styles.stockContent1}>
+                <StockLogo symbol={symbol} />
+                <View style={{flexShrink: 1}}>
+                  <Text style={styles.stock3Title}>{symbol}</Text>
+                  <Text style={styles.stock3Sub} numberOfLines={1}>
+                    {quote?.name ?? ''}
+                  </Text>
+                </View>
               </View>
+              <Text style={{color: '#1A1A1A', fontWeight: '600'}}>
+                {quote ? formatMoney(price) : '—'}
+              </Text>
             </View>
+            <View style={styles.quantityRow}>
+              <TouchableOpacity
+                testID="order-decrease"
+                style={styles.stepBtn}
+                onPress={() => setShares((shares || 0) - 1)}>
+                <Text style={styles.stepText}>−</Text>
+              </TouchableOpacity>
+              <TextInput
+                testID="order-quantity"
+                style={styles.quantityInput}
+                value={quantityText}
+                onChangeText={text =>
+                  setQuantityText(text.replace(/[^0-9]/g, ''))
+                }
+                keyboardType="number-pad"
+                selectTextOnFocus
+              />
+              <TouchableOpacity
+                testID="order-increase"
+                style={styles.stepBtn}
+                onPress={() => setShares((shares || 0) + 1)}>
+                <Text style={styles.stepText}>+</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                testID="order-max"
+                style={styles.maxBtn}
+                onPress={() => setShares(maxShares)}>
+                <Text style={styles.maxText}>{t('order.max')}</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.infoContainer}>
+              {rows.map(([label, value, color]) => (
+                <View key={label} style={styles.infoRow}>
+                  <Text style={styles.infoKey}>{label}</Text>
+                  <Text style={[styles.infoValue, color ? {color} : null]}>
+                    {value}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+          {problem && quantityText ? (
+            <Text style={styles.problemText}>{t(problem)}</Text>
+          ) : null}
+          <Text style={styles.greyTxt}>{t('order.disclaimer')}</Text>
+          {quote && !isTradable(quote) ? (
+            <Text style={styles.problemText}>{t('detail.notTradable')}</Text>
+          ) : (
             <TouchableOpacity
-              style={styles.checkbox}
-              onPress={() => selectRadioButton(index)}>
-              {selectedMethod === index && (
-                <View style={styles.checkboxInner} />
-              )}
+              testID="order-place"
+              onPress={handlePlaceOrder}
+              disabled={!!problem}
+              style={[
+                styles.placeBtn,
+                centerAll,
+                {backgroundColor: problem ? '#CCCCCC' : '#FFED4B'},
+              ]}>
+              <Text style={{color: '#1A1A1A', fontSize: 14, fontWeight: '600'}}>
+                {t('order.place')}
+              </Text>
             </TouchableOpacity>
-          </View>
-        );
-      })}
-      <TouchableOpacity
-        onPress={handleBuy}
-        style={[
-          {
-            backgroundColor: isButtonDisabled ? '#CCCCCC' : '#FFED4B',
-            paddingHorizontal: vw(5),
-            paddingVertical: vh(2),
-            borderRadius: 16,
-            marginTop: vh(2),
-          },
-          centerAll,
-        ]}
-        disabled={isButtonDisabled}>
-        <Text style={{color: '#1A1A1A', fontSize: 14, fontWeight: '600'}}>
-          Đặt lệnh
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-const BannerView: React.FC<{itemIndex: number}> = ({itemIndex}) => {
-  const data = VerifyData[itemIndex];
-  return (
-    <View
-      style={{padding: vw(3), backgroundColor: '#2C2C2C', borderRadius: 10}}>
-      <View style={styles.stockContainer}>
-        <View style={styles.stock3Container}>
-          <View style={styles.stockContent}>
-            <View style={styles.stockContent1}>
-              <Image source={StockHomeData3[itemIndex].logo} />
-              <View>
-                <Text style={styles.stock3Title}>
-                  {StockHomeData3[itemIndex].shortName}
-                </Text>
-                <Text style={styles.stock3Sub}>
-                  {StockHomeData3[itemIndex].name}
-                </Text>
-              </View>
-            </View>
-            <Text style={{color: '#1A1A1A', fontWeight: '600'}}>
-              ${data.defaultPrice}
-            </Text>
-          </View>
+          )}
         </View>
-        <View style={styles.infoContainer}>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoKey}>Nguồn tài trợ</Text>
-            <Text style={[styles.infoValue, {color: '#FFED4B'}]}>
-              {data.sponsor}
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoKey}>Ước tính giá cổ phiếu</Text>
-            <Text style={styles.infoValue}>${data.stockPriceEstimate}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoKey}>Khoảng lượt chia sẻ</Text>
-            <Text style={styles.infoValue}>{data.share}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoKey}>Phí</Text>
-            <Text style={styles.infoValue}>${data.fee}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoKey}>Tổng</Text>
-            <Text style={[styles.infoValue, {color: '#FFED4B'}]}>
-              ${data.sum}
-            </Text>
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-};
-
-const Header: React.FC = () => {
-  const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  return (
-    <View style={[centerAll, {paddingVertical: vh(3)}]}>
-      <TouchableOpacity
-        style={styles.backBtn}
-        onPress={() => {
-          navigation.goBack();
-        }}>
-        {backIcon(vw(6), vw(6), '#76787E')}
-      </TouchableOpacity>
-      <Text style={styles.headerTxt}>Xác nhận lệnh</Text>
-    </View>
+      </ScrollView>
+      {processing && <LoadingOverlay />}
+    </SafeAreaView>
   );
 };
 
@@ -232,16 +270,26 @@ export default BuyingVerify;
 
 const styles = StyleSheet.create({
   container: container,
-  headerTxt: {color: '#FFFFFF', fontSize: 14, fontWeight: '600'},
-  backBtn: {
-    position: 'absolute',
-    left: vw(5),
-    borderWidth: 1,
-    borderColor: '#76787E',
-    borderRadius: 10,
-    padding: vw(1.5),
+  sideToggle: {
+    flexDirection: 'row',
+    backgroundColor: '#2C2C2C',
+    borderRadius: vw(2),
+    padding: vw(1),
   },
-  stockContainer: {
+  sideBtn: {
+    flex: 1,
+    paddingVertical: vh(1.5),
+    alignItems: 'center',
+    borderRadius: vw(1.5),
+  },
+  sideText: {
+    color: '#76787E',
+    fontWeight: '600',
+  },
+  card: {
+    padding: vw(3),
+    backgroundColor: '#2C2C2C',
+    borderRadius: 10,
     rowGap: vh(2),
   },
   stock3Container: {
@@ -264,36 +312,52 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '400',
   },
-  stockContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  yellowTxt: {
-    color: '#FFED4B',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  greenTxt: {
-    color: '#5DC172',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  greyTxt: {
-    color: '#76787E',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  whiteTxt: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
-  },
   stockContent1: {
     flexDirection: 'row',
     columnGap: vw(2),
     alignItems: 'center',
+    flexShrink: 1,
+  },
+  quantityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: vw(2),
+  },
+  stepBtn: {
+    width: vw(11),
+    height: vw(11),
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#76787E',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepText: {
+    color: '#FFFFFF',
+    fontSize: 20,
+  },
+  quantityInput: {
+    flex: 1,
+    height: vw(11),
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#FFED4B',
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  maxBtn: {
+    paddingHorizontal: vw(3),
+    height: vw(11),
+    borderRadius: 10,
+    backgroundColor: '#1A1A1A',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  maxText: {
+    color: '#FFED4B',
+    fontWeight: '600',
   },
   infoContainer: {
     width: '100%',
@@ -315,42 +379,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'right',
   },
-  cardContainer: {
-    backgroundColor: '#2C2C2C',
-    padding: vw(3),
-    borderRadius: 10,
-    marginBottom: vh(2),
-    flexDirection: 'row',
-    columnGap: vw(2),
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  problemText: {
+    color: '#FF4444',
+    fontSize: 13,
   },
-  cardContainer1: {
-    flexDirection: 'row',
-    columnGap: vw(2),
-    alignItems: 'center',
+  greyTxt: {
+    color: '#76787E',
+    fontSize: 12,
+    fontWeight: '500',
   },
-  cardIcon: {
-    padding: vw(2),
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFED4B',
-    borderRadius: vw(20),
-    alignSelf: 'flex-start',
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderWidth: 1,
-    borderColor: '#76787E',
-    borderRadius: vw(20),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxInner: {
-    width: 20,
-    height: 20,
-    borderRadius: vw(12),
-    backgroundColor: '#FFFFFF',
+  placeBtn: {
+    paddingHorizontal: vw(5),
+    paddingVertical: vh(2),
+    borderRadius: 16,
+    marginBottom: vh(4),
   },
 });

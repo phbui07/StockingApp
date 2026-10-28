@@ -1,0 +1,380 @@
+const vi = {
+  // Common
+  'common.ok': 'OK',
+  'common.cancel': 'Hủy',
+  'common.save': 'Lưu',
+  'common.delete': 'Xóa',
+  'common.error': 'Lỗi',
+  'common.success': 'Thành công',
+  'common.retry': 'Thử lại',
+  'common.loading': 'Đang tải...',
+  'common.processing': 'Đang xử lý...',
+  'common.continue': 'Tiếp tục',
+  'common.back': 'Quay lại',
+  'common.orContinueWith': 'Hoặc có thể tiếp tục',
+  'common.email': 'Email',
+  'common.password': 'Mật khẩu',
+  'common.invalidEmail': 'Email không hợp lệ',
+  'common.passwordTooShort': 'Mật khẩu tối thiểu 6 ký tự',
+  'common.passwordMismatch': 'Mật khẩu nhập lại không khớp',
+  'common.dataError':
+    'Không tải được dữ liệu thị trường. Kéo xuống để thử lại.',
+  'common.shares': '{count} cổ phiếu',
+  'common.marketOpen': 'Thị trường đang mở',
+  'common.marketClosed': 'Thị trường đã đóng',
+  'common.updatedAt': 'Cập nhật lúc {time}',
+  'common.today': 'hôm nay',
+
+  // Chart ranges
+  'range.1D': '1 ngày',
+  'range.1W': '1 tuần',
+  'range.1M': '1 tháng',
+  'range.3M': '3 tháng',
+  'range.6M': '6 tháng',
+  'range.1Y': '1 năm',
+  'range.5Y': '5 năm',
+
+  // Onboarding
+  'onboarding.skip': 'Bỏ qua',
+  'onboarding.slide1Title': 'Biểu đồ giao dịch chứng khoán',
+  'onboarding.slide1Desc':
+    'Theo dõi giá cổ phiếu trực tiếp và đưa ra quyết định đầu tư sáng suốt hơn.',
+  'onboarding.slide2Title': 'Tăng lợi nhuận của bạn',
+  'onboarding.slide2Desc':
+    'Luyện tập giao dịch với $100.000 tiền ảo, không có rủi ro.',
+  'onboarding.login': 'Đăng nhập',
+  'onboarding.signup': 'Đăng ký',
+
+  // Login
+  'login.title': 'Xin chào',
+  'login.subtitle': 'Chào mừng đã quay trở lại, hãy đăng nhập:',
+  'login.forgot': 'Quên mật khẩu?',
+  'login.noAccount': 'Chưa có tài khoản?',
+  'login.signUp': 'Đăng ký',
+  'login.wrongCredentials': 'Email hoặc mật khẩu không đúng',
+  'login.googleFailed': 'Đăng nhập Google thất bại',
+  'login.googleUnavailable':
+    'Đăng nhập Google chưa được cấu hình trên thiết bị này.',
+
+  // Sign up
+  'signup.title': 'Tham gia Stockline',
+  'signup.subtitle': 'Bắt đầu hành trình đầu tư với $100.000 tiền ảo',
+  'signup.name': 'Tên của bạn',
+  'signup.nameRequired': 'Hãy nhập tên của bạn',
+  'signup.emailExists': 'Email đã tồn tại',
+  'signup.success': 'Đăng ký thành công',
+  'signup.successMessage': 'Bây giờ bạn có thể đăng nhập.',
+  'signup.haveAccount': 'Bạn đã có tài khoản?',
+  'signup.login': 'Đăng nhập',
+
+  // Welcome
+  'welcome.hello': 'Xin chào {name}!',
+  'welcome.title': 'Chào mừng tới Stockline',
+  'welcome.subtitle': 'Bạn có {amount} tiền ảo để bắt đầu luyện tập giao dịch',
+  'welcome.start': 'Bắt đầu',
+  'welcome.friend': 'bạn',
+
+  // Forgot / reset password
+  'forgot.title': 'Quên mật khẩu',
+  'forgot.desc':
+    'Nhập email đã đăng ký, chúng tôi sẽ gửi mã xác minh tới thiết bị này.',
+  'forgot.send': 'Gửi mã xác nhận',
+  'forgot.notFound': 'Không tìm thấy tài khoản với email này.',
+  'forgot.googleAccount':
+    'Tài khoản này đăng nhập bằng Google nên không có mật khẩu.',
+  'reset.title': 'Đặt mật khẩu mới',
+  'reset.desc': 'Tạo mật khẩu mới cho {email}',
+  'reset.newPassword': 'Mật khẩu mới',
+  'reset.confirmPassword': 'Nhập lại mật khẩu',
+  'reset.submit': 'Đổi mật khẩu',
+  'reset.success': 'Đã đổi mật khẩu. Hãy đăng nhập lại.',
+
+  // OTP
+  'otp.title': 'Nhập mã xác minh',
+  'otp.desc':
+    'Chúng tôi đã gửi mã gồm 5 chữ số qua thông báo trên thiết bị này.',
+  'otp.resend': 'Gửi lại',
+  'otp.verify': 'Xác minh',
+  'otp.notificationTitle': 'Mã xác minh Stockline',
+  'otp.notificationBody':
+    'Mã xác minh của bạn là {code}. Mã hết hạn sau 5 phút.',
+  'otp.invalidTitle': 'Mã OTP lỗi',
+  'otp.invalid': 'Sai mã OTP, vui lòng nhập lại',
+  'otp.expired': 'Mã đã hết hạn, hãy gửi lại mã mới',
+  'otp.fallbackTitle': 'Mã xác minh',
+  'otp.fallbackBody':
+    'Thông báo đang bị tắt nên mã được hiển thị tại đây: {code}',
+
+  // Phone
+  'phone.title': 'Nhập số điện thoại',
+  'phone.desc': 'Bạn sẽ nhận được mã gồm 5 chữ số để xác minh số điện thoại',
+  'phone.send': 'Gửi mã',
+  'phone.invalidTitle': 'Số điện thoại không phù hợp',
+  'phone.invalidDesc': 'Hãy nhập lại số điện thoại',
+  'phone.verified': 'Đã xác minh số điện thoại',
+
+  // Home
+  'home.portfolioTotal': 'Tổng danh mục đầu tư',
+  'home.watchlist': 'Theo dõi',
+  'home.watchlistEmpty': 'Nhấn + để thêm cổ phiếu vào danh sách theo dõi',
+  'home.popular': 'Cổ phiếu phổ biến',
+
+  // Portfolio (Chart tab)
+  'portfolio.title': 'Danh mục đầu tư',
+  'portfolio.allTime': 'từ khi bắt đầu',
+  'portfolio.gain': 'Lãi',
+  'portfolio.loss': 'Lỗ',
+  'portfolio.noTrades': 'Hãy mua cổ phiếu đầu tiên để xem hiệu suất danh mục.',
+  'portfolio.holdings': 'Cổ phiếu',
+  'portfolio.cash': 'Tiền mặt',
+  'portfolio.findStocks': 'Tìm cổ phiếu',
+
+  // Trade tab
+  'trade.title': 'Giao dịch',
+  'trade.buy': 'Mua',
+  'trade.sell': 'Bán',
+  'trade.overview': 'Tổng quan',
+  'trade.history': 'Lịch sử',
+  'trade.stats': 'Thống kê giao dịch',
+  'trade.totalTrades': 'Tổng GD',
+  'trade.winRate': 'Tỷ lệ thắng',
+  'trade.realizedPnL': 'Lãi/Lỗ đã chốt',
+  'trade.pnlChart': 'Lãi/lỗ đã chốt (7 ngày)',
+  'trade.quickActions': 'Thao tác nhanh',
+  'trade.cash': 'Tiền mặt',
+  'trade.watchlist': 'Danh sách theo dõi',
+  'trade.watchlistCount': '{count} cổ phiếu',
+  'trade.alerts': 'Cảnh báo giá',
+  'trade.alertsCount': '{count} đang bật',
+  'trade.historyTitle': 'Lịch sử giao dịch ({count})',
+  'trade.noHistory': 'Chưa có giao dịch nào',
+  'trade.noHoldingsToSell': 'Bạn chưa sở hữu cổ phiếu nào để bán.',
+  'trade.quantity': 'Số lượng:',
+  'trade.price': 'Giá:',
+  'trade.total': 'Tổng:',
+  'trade.pnl': 'Lãi/Lỗ:',
+  'trade.completed': 'Hoàn thành',
+  'trade.typeBuy': 'MUA',
+  'trade.typeSell': 'BÁN',
+
+  // Holdings (Stock tab)
+  'holdings.title': 'Danh mục sở hữu',
+  'holdings.totalValue': 'Tổng giá trị cổ phiếu',
+  'holdings.cashAvailable': 'Tiền mặt khả dụng: {amount}',
+  'holdings.search': 'Tìm trong danh mục...',
+  'holdings.all': 'Tất cả',
+  'holdings.gainers': 'Tăng',
+  'holdings.losers': 'Giảm',
+  'holdings.count': 'Cổ phiếu sở hữu ({count})',
+  'holdings.avgCost': 'Giá vốn {price}',
+  'holdings.empty': 'Bạn chưa sở hữu cổ phiếu nào',
+  'holdings.emptyDesc': 'Tìm một cổ phiếu và mua bằng tiền ảo để bắt đầu.',
+
+  // Watchlist
+  'watchlist.title': 'Danh sách theo dõi',
+  'watchlist.sort': 'Sắp xếp: {by}',
+  'watchlist.sortDefault': 'Mặc định',
+  'watchlist.sortName': 'Tên',
+  'watchlist.sortChange': 'Thay đổi',
+  'watchlist.sortPrice': 'Giá',
+  'watchlist.search': 'Tìm kiếm cổ phiếu...',
+  'watchlist.count': 'Tổng cổ phiếu',
+  'watchlist.upDown': 'Tăng / Giảm',
+  'watchlist.avgChange': 'Thay đổi TB',
+  'watchlist.following': 'Đang theo dõi ({count})',
+  'watchlist.empty': 'Chưa có cổ phiếu nào trong danh sách theo dõi',
+  'watchlist.emptyDesc': 'Tìm kiếm cổ phiếu ở trên để bắt đầu theo dõi',
+  'watchlist.results': 'Kết quả tìm kiếm',
+
+  // Search
+  'search.titleView': 'Tìm cổ phiếu',
+  'search.titleBuy': 'Chọn cổ phiếu để mua',
+  'search.titleSell': 'Chọn cổ phiếu để bán',
+  'search.titleAlert': 'Chọn cổ phiếu để đặt cảnh báo',
+  'search.placeholder': 'Nhập mã hoặc tên công ty...',
+  'search.noResults': 'Không tìm thấy kết quả cho "{query}"',
+  'search.searching': 'Đang tìm...',
+  'search.failed': 'Tìm kiếm thất bại. Kiểm tra kết nối mạng.',
+
+  // Stock details
+  'detail.title': 'Thông tin cổ phiếu',
+  'detail.about': 'Giới thiệu',
+  'detail.details': 'Chi tiết',
+  'detail.news': 'Tin tức',
+  'detail.website': 'TRANG WEB:',
+  'detail.employees': 'NHÂN VIÊN:',
+  'detail.headquarters': 'TRỤ SỞ CHÍNH:',
+  'detail.sector': 'NGÀNH:',
+  'detail.leader': 'LÃNH ĐẠO:',
+  'detail.exchange': 'SÀN:',
+  'detail.noProfile': 'Không có thông tin công ty cho mã này.',
+  'detail.profileError': 'Không tải được thông tin công ty.',
+  'detail.keyStats': 'Chỉ số chính',
+  'detail.open': 'Mở cửa',
+  'detail.prevClose': 'Đóng cửa trước',
+  'detail.dayRange': 'Biên độ ngày',
+  'detail.yearRange': 'Biên độ 52 tuần',
+  'detail.volume': 'Khối lượng',
+  'detail.avgVolume': 'KL trung bình',
+  'detail.marketCap': 'Vốn hóa',
+  'detail.pe': 'P/E',
+  'detail.dividendYield': 'Tỷ suất cổ tức',
+  'detail.financials': 'Kết quả kinh doanh',
+  'detail.year': 'Năm',
+  'detail.revenue': 'Doanh thu',
+  'detail.netIncome': 'Thu nhập ròng',
+  'detail.noNews': 'Chưa có tin tức',
+  'detail.position': 'Vị thế của bạn',
+  'detail.positionShares': 'Số cổ phiếu',
+  'detail.positionAvg': 'Giá vốn TB',
+  'detail.positionValue': 'Giá trị',
+  'detail.positionPnl': 'Lãi/Lỗ',
+  'detail.notTradable':
+    'Mã này không giao dịch được trong ứng dụng (chỉ hỗ trợ cổ phiếu và quỹ ETF niêm yết bằng USD).',
+  'detail.watch': 'Theo dõi',
+  'detail.unwatch': 'Bỏ theo dõi',
+  'detail.setAlert': 'Đặt cảnh báo giá',
+  'detail.chartError': 'Không tải được biểu đồ',
+
+  // Order
+  'order.title': 'Xác nhận lệnh',
+  'order.marketPrice': 'Giá thị trường',
+  'order.quantity': 'Số lượng',
+  'order.max': 'Tối đa',
+  'order.estimatedTotal': 'Tổng giá trị ước tính',
+  'order.cashAvailable': 'Tiền mặt khả dụng',
+  'order.sharesOwned': 'Cổ phiếu đang có',
+  'order.cashAfter': 'Tiền mặt sau giao dịch',
+  'order.fundingSource': 'Nguồn tiền',
+  'order.virtualAccount': 'Tài khoản ảo',
+  'order.place': 'Đặt lệnh',
+  'order.disclaimer':
+    'Đây là giao dịch mô phỏng bằng tiền ảo. Lệnh được khớp ngay tại giá gần nhất.',
+  'order.insufficientCash': 'Không đủ tiền mặt cho lệnh này.',
+  'order.insufficientShares': 'Bạn không có đủ cổ phiếu để bán.',
+  'order.invalidQuantity': 'Số lượng phải lớn hơn 0.',
+  'order.priceUnavailable': 'Chưa có giá thị trường, vui lòng thử lại.',
+  'order.confirmTitle': 'Xác nhận lệnh {side}',
+  'order.confirmMessage':
+    '{side} {shares} cổ phiếu {symbol} với giá {price}?\nTổng: {total}',
+  'order.successBuy': 'Đã mua {shares} cổ phiếu {symbol} với giá {price}.',
+  'order.successSell': 'Đã bán {shares} cổ phiếu {symbol} với giá {price}.',
+  'order.authPrompt': 'Xác thực để {side} {symbol}',
+  'order.authFailed': 'Xác thực không thành công. Lệnh chưa được đặt.',
+
+  // Biometrics
+  'bio.notAvailable': 'Thiết bị không hỗ trợ xác thực sinh trắc học',
+  'bio.failed': 'Xác thực không thành công',
+  'bio.error': 'Lỗi xác thực sinh trắc học',
+  'bio.defaultReason': 'Xác thực để tiếp tục',
+
+  // Price alerts
+  'alerts.title': 'Cảnh báo giá',
+  'alerts.add': 'Thêm cảnh báo',
+  'alerts.currentPrice': 'Giá hiện tại: {price}',
+  'alerts.targetPlaceholder': 'Giá mục tiêu',
+  'alerts.above': 'Báo khi giá tăng lên {price}',
+  'alerts.below': 'Báo khi giá giảm xuống {price}',
+  'alerts.create': 'Tạo cảnh báo',
+  'alerts.active': 'Đang bật ({count})',
+  'alerts.triggered': 'Đã kích hoạt ({count})',
+  'alerts.empty': 'Chưa có cảnh báo nào',
+  'alerts.emptyDesc':
+    'Đặt giá mục tiêu và nhận thông báo khi giá chạm mức đó (khi ứng dụng đang mở).',
+  'alerts.triggeredAt': 'Kích hoạt lúc {time}',
+  'alerts.notifTitle': '{symbol} đã chạm {price}',
+  'alerts.notifBodyAbove': '{name} đã tăng lên {price} (mục tiêu {target}).',
+  'alerts.notifBodyBelow': '{name} đã giảm xuống {price} (mục tiêu {target}).',
+  'alerts.invalidTarget': 'Hãy nhập giá mục tiêu hợp lệ, khác giá hiện tại.',
+  'alerts.permissionDenied':
+    'Thông báo đang tắt. Bật thông báo trong Cài đặt để nhận cảnh báo.',
+  'alerts.created': 'Đã tạo cảnh báo',
+  'alerts.rearm': 'Bật lại',
+
+  // Profile
+  'profile.title': 'Tài khoản',
+  'profile.virtualBalance': 'Tài khoản ảo',
+  'profile.invite': 'Mời bạn bè',
+  'profile.inviteDesc': 'Chia sẻ Stockline để cùng luyện tập đầu tư',
+  'profile.inviteMessage':
+    'Mình đang luyện tập đầu tư chứng khoán với Stockline: tiền ảo, giá thị trường thật. Thử cùng mình nhé!',
+  'profile.account': 'Tài khoản',
+  'profile.security': 'Bảo mật',
+  'profile.transactions': 'Hóa đơn/Giao dịch',
+  'profile.language': 'Ngôn ngữ',
+  'profile.settings': 'Cài đặt',
+  'profile.faq': 'Câu hỏi thường gặp',
+  'profile.logout': 'Đăng xuất',
+  'profile.logoutConfirm': 'Bạn có chắc muốn đăng xuất?',
+
+  // Account details
+  'account.title': 'Thông tin tài khoản',
+  'account.name': 'Tên hiển thị',
+  'account.phone': 'Số điện thoại',
+  'account.addPhone': 'Thêm số điện thoại',
+  'account.changePhone': 'Đổi',
+  'account.saveName': 'Lưu tên',
+  'account.nameSaved': 'Đã lưu tên hiển thị',
+  'account.nameRequired': 'Tên không được để trống',
+  'account.changePassword': 'Đổi mật khẩu',
+  'account.currentPassword': 'Mật khẩu hiện tại',
+  'account.wrongPassword': 'Mật khẩu hiện tại không đúng',
+  'account.passwordChanged': 'Đã đổi mật khẩu',
+  'account.googleAccount':
+    'Bạn đăng nhập bằng Google nên không có mật khẩu để đổi.',
+
+  // Security
+  'security.title': 'Bảo mật',
+  'security.biometricTrades': 'Xác thực sinh trắc học khi giao dịch',
+  'security.biometricDesc': 'Yêu cầu {type} trước khi đặt lệnh mua hoặc bán.',
+  'security.notAvailable':
+    'Thiết bị này chưa cài đặt Face ID hoặc vân tay. Lệnh sẽ được xác nhận bằng hộp thoại.',
+  'security.faceId': 'Face ID',
+  'security.touchId': 'Touch ID',
+  'security.fingerprint': 'vân tay',
+  'security.enablePrompt': 'Xác thực để bật tính năng này',
+
+  // Language
+  'language.title': 'Ngôn ngữ',
+
+  // Settings
+  'settings.title': 'Cài đặt',
+  'settings.notifications': 'Thông báo',
+  'settings.notificationsDesc': 'Dùng cho mã xác minh và cảnh báo giá.',
+  'settings.notificationsOn': 'Đã bật',
+  'settings.enableNotifications': 'Bật thông báo',
+  'settings.virtualAccount': 'Tài khoản ảo',
+  'settings.startingBalance': 'Số dư ban đầu',
+  'settings.reset': 'Đặt lại tài khoản ảo',
+  'settings.resetDesc':
+    'Xóa toàn bộ cổ phiếu và lịch sử giao dịch, đặt lại số dư về {amount}.',
+  'settings.resetConfirm':
+    'Bạn có chắc muốn đặt lại? Thao tác này không thể hoàn tác.',
+  'settings.resetDone': 'Đã đặt lại tài khoản ảo',
+  'settings.dataSource': 'Nguồn dữ liệu',
+  'settings.dataSourceDesc':
+    'Giá lấy từ Yahoo Finance, có thể chậm vài phút và tự cập nhật mỗi 20 giây khi ứng dụng đang mở.',
+
+  // FAQ
+  'faq.title': 'Câu hỏi thường gặp',
+  'faq.q1': 'Stockline có dùng tiền thật không?',
+  'faq.a1':
+    'Không. Mọi giao dịch đều dùng tiền ảo. Bạn bắt đầu với $100.000 và có thể đặt lại bất cứ lúc nào trong Cài đặt.',
+  'faq.q2': 'Giá cổ phiếu lấy từ đâu?',
+  'faq.a2':
+    'Giá lấy từ Yahoo Finance và tự cập nhật mỗi 20 giây khi ứng dụng mở. Dữ liệu có thể chậm vài phút so với sàn.',
+  'faq.q3': 'Lệnh được khớp như thế nào?',
+  'faq.a3':
+    'Lệnh mua và bán được khớp ngay tại giá gần nhất, kể cả khi thị trường đóng cửa. Không tính phí giao dịch.',
+  'faq.q4': 'Lãi/lỗ được tính ra sao?',
+  'faq.a4':
+    'Lãi/lỗ chưa chốt = (giá hiện tại − giá vốn trung bình) × số cổ phiếu. Lãi/lỗ đã chốt được ghi lại mỗi khi bạn bán.',
+  'faq.q5': 'Cảnh báo giá hoạt động thế nào?',
+  'faq.a5':
+    'Đặt giá mục tiêu cho một cổ phiếu. Khi giá chạm mức đó, bạn nhận được thông báo. Cảnh báo chỉ được kiểm tra khi ứng dụng đang mở.',
+  'faq.q6': 'Dữ liệu của tôi được lưu ở đâu?',
+  'faq.a6':
+    'Tài khoản, danh mục và lịch sử giao dịch được lưu ngay trên thiết bị này. Gỡ ứng dụng sẽ xóa toàn bộ dữ liệu.',
+};
+
+export default vi;
