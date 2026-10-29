@@ -14,7 +14,7 @@ import {container, vh, vw} from '../../services/styleSheet';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {addIcon, notiIcon} from '../../assets/svgXML';
+import {addIcon, nextIcon, notiIcon} from '../../assets/svgXML';
 import {BarChart} from 'react-native-gifted-charts/dist/BarChart';
 import {useQuote} from '../../services/quoteStore';
 import {useUserData} from '../../services/userData';
@@ -41,6 +41,7 @@ import {
   formatPoints,
   formatTime,
 } from '../../services/format';
+import {COMPANY_ABOUT, CompanyAbout} from '../../locales/companies';
 import ScreenHeader from '../../components/ScreenHeader';
 import StockLogo from '../../components/StockLogo';
 import PriceChart from '../../components/PriceChart';
@@ -86,6 +87,16 @@ const ChartInfor = () => {
         {position ? (
           <PositionCard holding={toHolding(position, quote)} />
         ) : null}
+        <TouchableOpacity
+          testID="detail-learn"
+          style={styles.learnCard}
+          onPress={() => navigation.navigate('Insights', {symbol})}>
+          <View style={styles.flexShrink}>
+            <Text style={styles.learnTitle}>{t('detail.learnMore')}</Text>
+            <Text style={styles.greyTxt}>{t('detail.learnMoreDesc')}</Text>
+          </View>
+          {nextIcon(vw(7), vw(7), '#FFED4B')}
+        </TouchableOpacity>
         <TabView
           symbol={symbol}
           quote={quote}
@@ -359,8 +370,12 @@ const TabView: React.FC<{
       ) : activeTab === 'details' ? (
         // Quote-based stats still work when the profile can't be loaded.
         <DetailView info={info} quote={quote} />
-      ) : info ? (
-        <IntroduceView info={info} quote={quote} />
+      ) : info || COMPANY_ABOUT[symbol] ? (
+        <IntroduceView
+          info={info}
+          about={COMPANY_ABOUT[symbol]}
+          quote={quote}
+        />
       ) : (
         <View style={[styles.scene, {rowGap: vh(1.5)}]}>
           {infoFailed ? (
@@ -382,28 +397,38 @@ const TabView: React.FC<{
   );
 };
 
-const IntroduceView: React.FC<{info: CompanyInfo; quote?: Quote}> = ({
-  info,
-  quote,
-}) => {
-  const {t} = useI18n();
+// Built-in descriptions (short, in the app's language) come first; Yahoo's
+// profile, when it loads, fills in what they don't cover.
+const IntroduceView: React.FC<{
+  info: CompanyInfo | null;
+  about?: CompanyAbout;
+  quote?: Quote;
+}> = ({info, about, quote}) => {
+  const {t, lang} = useI18n();
+  const description = about?.description[lang] ?? info?.description;
   const rows: [string, string | undefined][] = [
-    [t('detail.website'), info.website],
+    [t('detail.website'), info?.website ?? about?.website],
+    [t('detail.since'), about ? String(about.since) : undefined],
     [
       t('detail.employees'),
-      info.employees ? formatNumber(info.employees) : undefined,
+      info?.employees ? formatNumber(info.employees) : undefined,
     ],
-    [t('detail.headquarters'), info.headquarters],
-    [t('detail.sector'), info.sector],
-    [t('detail.leader'), info.leader],
+    [
+      t('detail.headquarters'),
+      about?.headquarters?.[lang] ?? info?.headquarters,
+    ],
+    [t('detail.sector'), about?.sector?.[lang] ?? info?.sector],
+    [t('detail.leader'), info?.leader],
     [t('detail.exchange'), quote?.exchange],
   ];
   const visible = rows.filter(([, value]) => !!value);
 
   return (
     <View style={styles.scene}>
-      {info.description ? (
-        <Text style={styles.text}>{info.description}</Text>
+      {description ? (
+        <Text testID="detail-description" style={styles.text}>
+          {description}
+        </Text>
       ) : (
         <Text style={styles.greyNote}>{t('detail.noProfile')}</Text>
       )}
@@ -841,6 +866,27 @@ const styles = StyleSheet.create({
   },
   disabled: {
     backgroundColor: '#CCCCCC',
+  },
+  learnCard: {
+    marginHorizontal: vw(5),
+    marginTop: vh(2),
+    padding: vw(4),
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#FFED4B',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    columnGap: vw(3),
+  },
+  learnTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  flexShrink: {
+    flexShrink: 1,
   },
   retryBtn: {
     paddingHorizontal: vw(5),

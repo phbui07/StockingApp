@@ -26,6 +26,10 @@ jest.mock('react-native-gifted-charts/dist/BarChart', () => ({
   BarChart: () => null,
 }));
 
+let profileAvailable = true;
+// Year-ago closes for the growth rankings (defaults to 100).
+const yearBase: Record<string, number> = {};
+
 const DEMO = {email: 'a1@gmail.com', pass: '123456', name: 'Nguyễn Văn A'};
 const prices: Record<string, number> = {};
 
@@ -48,17 +52,61 @@ const respond = (body: unknown, status = 200) =>
     text: () => Promise.resolve(String(body)),
   } as Response);
 
-const fakeYahoo = (url: string) => {
+const geminiBodies: string[] = [];
+
+const fakeYahoo = (url: string, init?: RequestInit) => {
+  if (url.includes('generativelanguage.googleapis.com')) {
+    if (url.includes(':generateContent')) {
+      geminiBodies.push(String(init?.body));
+      const explanation = {
+        summary: 'Apple bán iPhone và dịch vụ.',
+        priceAction: 'Giá tăng trong năm qua.',
+        valuation: 'Không có dữ liệu P/E.',
+        news: 'Tin tức nói về sản phẩm mới.',
+        positives: ['Thương hiệu mạnh'],
+        risks: ['Phụ thuộc vào iPhone'],
+        questions: ['Doanh thu dịch vụ chiếm bao nhiêu?'],
+        terms: [{term: 'P/E', meaning: 'Giá chia cho lợi nhuận mỗi cổ phiếu.'}],
+      };
+      return respond({
+        candidates: [{content: {parts: [{text: JSON.stringify(explanation)}]}}],
+      });
+    }
+    return respond({models: []}); // key check
+  }
+  if (url.includes('range=5y&interval=1d')) {
+    const start = Math.floor(Date.now() / 1000) - 400 * 86400;
+    return respond({
+      chart: {
+        result: [
+          {
+            meta: meta('X'),
+            timestamp: Array.from({length: 400}, (_, i) => start + i * 86400),
+            indicators: {
+              quote: [{close: Array.from({length: 400}, (_, i) => 100 + i)}],
+            },
+          },
+        ],
+      },
+    });
+  }
   if (url.includes('/v7/finance/spark')) {
     const symbols = decodeURIComponent(
       url.split('symbols=')[1].split('&')[0],
     ).split(',');
+    const year = url.includes('range=1y');
     return respond({
       spark: {
         result: symbols.map(symbol => ({
           symbol,
           response: [
-            {meta: meta(symbol), indicators: {quote: [{close: [100, 101]}]}},
+            {
+              meta: {
+                ...meta(symbol),
+                ...(year ? {chartPreviousClose: yearBase[symbol] ?? 100} : {}),
+              },
+              indicators: {quote: [{close: [100, 101]}]},
+            },
           ],
         })),
       },
@@ -99,6 +147,9 @@ const fakeYahoo = (url: string) => {
     return respond('crumb');
   }
   if (url.includes('quoteSummary')) {
+    if (!profileAvailable) {
+      return respond('Too Many Requests', 429);
+    }
     return respond({
       quoteSummary: {
         result: [{assetProfile: {longBusinessSummary: 'Makes things.'}}],
@@ -165,8 +216,11 @@ beforeEach(async () => {
   resetQuoteStore();
   clearMarketDataCache();
   Object.keys(prices).forEach(key => delete prices[key]);
+  profileAvailable = true;
+  Object.keys(yearBase).forEach(key => delete yearBase[key]);
   alertSpy.mockClear();
   (Notifications.postLocalNotification as jest.Mock).mockClear();
+  geminiBodies.length = 0;
   globalThis.fetch = jest.fn(fakeYahoo) as any;
 });
 
@@ -365,4 +419,108 @@ it('switches the language and logs out', async () => {
   await pressAlert('Log out');
   expect(await screen.findByTestId('login-submit')).toBeOnTheScreen();
   expect(await AsyncStorage.getItem('userLoginStorage')).toBeNull();
+});
+
+it('skips onboarding to the login page and trades as a guest', async () => {
+  prices.AAPL = 200;
+  await render(<App />);
+  await fireEvent.press(
+    await screen.findByTestId('onboarding-skip', {}, {timeout: 5000}),
+  );
+  await fireEvent.press(await screen.findByTestId('login-guest'));
+  await screen.findByTestId('home-total');
+
+  await openStock('AAPL');
+  await fireEvent.press(screen.getByTestId('detail-buy'));
+  await placeOrder('1');
+  const guest = JSON.parse(
+    (await AsyncStorage.getItem('stockline.user.guest'))!,
+  );
+  expect(guest.portfolio.positions.AAPL.shares).toBe(1);
+  expect(await AsyncStorage.getItem(`stockline.user.${DEMO.email}`)).toBeNull();
+
+  await fireEvent.press(screen.getByLabelText('Quay lại'));
+  await fireEvent.press(await screen.findByTestId('tab-Profile'));
+  expect(await screen.findByTestId('profile-name')).toHaveTextContent('Khách');
+  expect(screen.queryByTestId('profile-Account')).toBeNull();
+  await fireEvent.press(screen.getByTestId('profile-logout'));
+  await pressAlert('Thoát chế độ khách');
+  expect(await screen.findByTestId('login-guest')).toBeOnTheScreen();
+}, 15000);
+
+it("shows the built-in About description when Yahoo's profile is unavailable", async () => {
+  profileAvailable = false;
+  await startLoggedIn();
+  await openStock('NVDA');
+  expect(await screen.findByTestId('detail-description')).toHaveTextContent(
+    /NVIDIA thiết kế bộ xử lý đồ họa/,
+  );
+  expect(screen.getByText('Santa Clara, California, Hoa Kỳ')).toBeOnTheScreen();
+  expect(screen.queryByTestId('detail-retry-profile')).toBeNull();
+});
+
+it('explains a stock with AI and shows indicator history', async () => {
+  prices.AAPL = 200;
+  await startLoggedIn();
+  await openStock('AAPL');
+  await fireEvent.press(screen.getByTestId('detail-learn'));
+
+  // Indicator history from five years of daily prices.
+  const row = await screen.findByTestId('indicator-aboveSma200');
+  expect(row).toHaveTextContent(/Hiện tại: đúng/);
+  expect(row).toHaveTextContent(/Cao hơn 100.00% số lần/);
+  expect(
+    screen.getByText(/không đảm bảo kết quả trong tương lai/),
+  ).toBeOnTheScreen();
+
+  // No key yet: paste one (it's checked with Google, then saved).
+  await fireEvent.changeText(
+    await screen.findByTestId('ai-key-input'),
+    'test-key',
+  );
+  await fireEvent.press(screen.getByTestId('ai-key-save'));
+  await waitFor(async () =>
+    expect(await AsyncStorage.getItem('stockline.geminiKey')).toBe(
+      '"test-key"',
+    ),
+  );
+
+  await fireEvent.press(await screen.findByTestId('insights-explain'));
+  await pressAlert('Tiếp tục'); // AI notice, once per session
+  expect(
+    await screen.findByText('Apple bán iPhone và dịch vụ.'),
+  ).toBeOnTheScreen();
+  expect(screen.getByTestId('insights-ai-label')).toHaveTextContent(
+    /gemini-3.8-flash.*không phải tư vấn đầu tư/,
+  );
+
+  // Only public market data goes to the AI.
+  expect(geminiBodies).toHaveLength(1);
+  expect(geminiBodies[0]).not.toContain(DEMO.email);
+  expect(geminiBodies[0]).not.toContain(DEMO.name);
+  expect(geminiBodies[0]).toContain('AAPL');
+});
+
+it('ranks the biggest gainers and losers by period', async () => {
+  prices.NVDA = 150; // +50% today
+  prices.AAPL = 120;
+  prices.INTC = 50; // -50% today
+  yearBase.TSLA = 40; // +150% over the year
+  await startLoggedIn();
+  await fireEvent.press(screen.getByTestId('home-movers'));
+
+  expect(await screen.findByTestId('mover-1')).toHaveTextContent(
+    /NVDA.*\+50\.00%/,
+  );
+  expect(screen.getByTestId('mover-2')).toHaveTextContent(/AAPL/);
+
+  await fireEvent.press(screen.getByTestId('movers-losers'));
+  expect(screen.getByTestId('mover-1')).toHaveTextContent(/INTC.*-50\.00%/);
+
+  await fireEvent.press(screen.getByTestId('movers-gainers'));
+  await fireEvent.press(screen.getByTestId('movers-period-year'));
+  await waitFor(() =>
+    expect(screen.getByTestId('mover-1')).toHaveTextContent(/TSLA.*\+150\.00%/),
+  );
+  expect(screen.getByText(/không phải khuyến nghị/)).toBeOnTheScreen();
 });

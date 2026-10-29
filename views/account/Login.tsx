@@ -95,7 +95,13 @@ const MainForm: React.FC = () => {
 const FooterView: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const {t} = useI18n();
+  const {logInAsGuest} = useSession();
   const signInWithGoogle = useGoogleSignIn();
+
+  const continueAsGuest = async () => {
+    await logInAsGuest();
+    enterApp(navigation, false);
+  };
 
   return (
     <View style={styles.footerContainer}>
@@ -109,6 +115,12 @@ const FooterView: React.FC = () => {
           {goggleIcon(vw(5), vw(5))}
           <Text style={styles.buttonText}>Google</Text>
         </View>
+      </TouchableOpacity>
+      <TouchableOpacity
+        testID="login-guest"
+        style={styles.button}
+        onPress={continueAsGuest}>
+        <Text style={styles.buttonText}>{t('login.guest')}</Text>
       </TouchableOpacity>
       <View style={centerAll}>
         <View style={styles.loginContainer}>

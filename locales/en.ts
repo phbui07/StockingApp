@@ -56,6 +56,8 @@ const en: Record<keyof typeof vi, string> = {
   'login.googleFailed': 'Google sign-in failed',
   'login.googleUnavailable': "Google sign-in isn't set up on this device.",
 
+  'login.guest': 'Continue as guest',
+
   // Sign up
   'signup.title': 'Join Stockline',
   'signup.subtitle': 'Start investing with $100,000 in virtual cash',
@@ -202,6 +204,7 @@ const en: Record<keyof typeof vi, string> = {
   'detail.details': 'Details',
   'detail.news': 'News',
   'detail.website': 'WEBSITE:',
+  'detail.since': 'SINCE:',
   'detail.employees': 'EMPLOYEES:',
   'detail.headquarters': 'HEADQUARTERS:',
   'detail.sector': 'SECTOR:',
@@ -262,6 +265,100 @@ const en: Record<keyof typeof vi, string> = {
   'order.authPrompt': 'Authenticate to {side} {symbol}',
   'order.authFailed': 'Authentication failed. The order was not placed.',
 
+  // Growth rankings
+  'home.movers': 'Growth rankings',
+  'home.moversDesc': 'Biggest gainers by day, week, month and year',
+  'movers.title': 'Growth rankings',
+  'movers.gainers': 'Top gainers',
+  'movers.losers': 'Top losers',
+  'movers.day': 'Day',
+  'movers.week': 'Week',
+  'movers.month': 'Month',
+  'movers.year': 'Year',
+  'movers.periodDay': 'the latest session',
+  'movers.periodWeek': 'the past week',
+  'movers.periodMonth': 'the past month',
+  'movers.periodYear': 'the past year',
+  'movers.intro':
+    'Ranks {count} large US companies by price change over {period}.',
+  'movers.caveat':
+    "Past gains don't mean the price will keep rising, and the biggest movers are usually the riskiest. This is a data ranking, not a recommendation.",
+
+  // Learn: AI explainer and indicator history
+  'detail.learnMore': 'Learn about this stock',
+  'detail.learnMoreDesc': 'AI explainer and indicator history',
+  'insights.title': 'Learn: {symbol}',
+  'insights.aiTitle': 'AI explainer',
+  'insights.aiIntro':
+    'The AI reads the price data, key numbers and recent news, then explains them in plain language.',
+  'insights.explain': 'Explain this stock',
+  'insights.regenerate': 'Regenerate',
+  'insights.loading': 'The AI is reading the data...',
+  'insights.summary': 'Overview',
+  'insights.priceAction': 'Price moves',
+  'insights.valuation': 'Key numbers',
+  'insights.news': 'Recent news',
+  'insights.positives': 'What supporters point to',
+  'insights.risks': 'Risks critics point to',
+  'insights.questions': 'Questions to explore',
+  'insights.terms': 'Terms',
+  'insights.label':
+    'AI-generated ({model}) at {time}, for education only; not investment advice. AI can be wrong, so double-check.',
+  'insights.removed': 'Hid {count} advice-like sentences.',
+  'insights.noticeTitle': 'AI explainer',
+  'insights.noticeBody':
+    'The explanation is written by AI (Google Gemini), for education only, not investment advice. AI can be wrong.\n\nOnly public stock data is sent to Google, never your account or portfolio. On the free tier, Google may use this data to improve its products.',
+  'insights.noticeContinue': 'Continue',
+  'insights.needKey':
+    'The AI needs a free Gemini API key. Create one in Google AI Studio and paste it here.',
+  'insights.getKey': 'Get a free key',
+  'insights.keyPlaceholder': 'Paste API key',
+  'insights.saveKey': 'Save key',
+  'insights.checkingKey': 'Checking key...',
+  'insights.errorInvalidKey': "That API key isn't valid. Please check it.",
+  'insights.errorQuota': "Today's free quota is used up. Try again later.",
+  'insights.errorBlocked': 'The AI declined to answer this request.',
+  'insights.errorNetwork':
+    "Couldn't reach the AI. Check your connection and try again.",
+  'insights.errorBad': 'The AI returned something unreadable. Try again.',
+  'insights.positionTitle': 'In your virtual portfolio',
+  'insights.positionDesc':
+    "You hold {shares} shares, {percent} of your total portfolio value. This is calculated on your device and isn't sent to the AI.",
+  'insights.indicatorsTitle': 'Indicators and their history',
+  'insights.indicatorsIntro':
+    'From {from} to {to}, on days when each of these was true, how often was the price higher {horizon} trading days (about a month) later? Compare with the base rate for all days.',
+  'insights.baseRate': 'All days (base rate)',
+  'insights.higherAfter':
+    'Higher {rate} of the time · avg {avg} · {count} days',
+  'insights.fewSamples': 'few cases, hard to draw conclusions',
+  'insights.never': "Didn't happen in this period",
+  'insights.now': 'Now: true',
+  'insights.notNow': 'Now: false',
+  'insights.caveat':
+    "These results are hypothetical, based on this symbol's own past data, and the periods overlap, so they aren't independent. They don't reflect actual investment results and are not guarantees of future results.",
+  'insights.notEnoughData': 'Not enough price history to calculate this.',
+  'indicator.aboveSma200': 'Price above its 200-day average',
+  'indicator.aboveSma200Desc':
+    'The 200-day average is the mean closing price over about 10 months of trading, often used to judge the long-term trend.',
+  'indicator.smaCross': '50-day average above the 200-day average',
+  'indicator.smaCrossDesc':
+    'When the short-term average is above the long-term one, recent prices are higher than the long-run average. The moment it crosses above is called a "golden cross".',
+  'indicator.rsiBelow30': 'RSI below 30 ("oversold")',
+  'indicator.rsiBelow30Desc':
+    'RSI (0–100) compares gains and losses over 14 sessions. Below 30 means the price has fallen quickly.',
+  'indicator.rsiAbove70': 'RSI above 70 ("overbought")',
+  'indicator.rsiAbove70Desc':
+    'RSI above 70 means the price has risen quickly in a short time.',
+  'indicator.drawdown10': 'More than 10% below its 1-year high',
+  'indicator.drawdown10Desc':
+    'The price is over 10% below its highest close of the last 252 sessions.',
+  'settings.ai': 'AI explainer',
+  'settings.aiDesc':
+    'Uses your free Gemini API key, stored on this device only.',
+  'settings.aiKeySet': 'Key saved',
+  'settings.aiRemoveKey': 'Remove key',
+  'settings.aiKeySaved': 'API key saved',
+
   // Biometrics
   'bio.notAvailable': "This device doesn't support biometric authentication",
   'bio.failed': 'Authentication failed',
@@ -307,6 +404,13 @@ const en: Record<keyof typeof vi, string> = {
   'profile.faq': 'FAQ',
   'profile.logout': 'Log out',
   'profile.logoutConfirm': 'Are you sure you want to log out?',
+
+  // Guest mode
+  'guest.name': 'Guest',
+  'guest.subtitle': 'Your data is saved on this device only',
+  'guest.exit': 'Exit guest mode',
+  'guest.exitConfirm':
+    'Your guest portfolio stays on this device. Choose "Continue as guest" to come back to it.',
 
   // Account details
   'account.title': 'Account details',

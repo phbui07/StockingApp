@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {centerAll, container, vh, vw} from '../../services/styleSheet';
 import {stocklineIcon} from '../../assets/svgXML';
@@ -43,7 +43,6 @@ const MainLayout: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const {t} = useI18n();
   const [currentPage, setCurrentPage] = useState(0);
-  const flatListRef = useRef<FlatList>(null);
 
   const handleMomentumScrollEnd = (
     event: NativeSyntheticEvent<NativeScrollEvent>,
@@ -53,16 +52,12 @@ const MainLayout: React.FC = () => {
     setCurrentPage(pageIndex);
   };
 
-  const handleSkipPress = () => {
-    if (currentPage === 0 && flatListRef.current) {
-      flatListRef.current.scrollToIndex({index: 1, animated: true});
-      setCurrentPage(1);
-    }
-  };
-
   return (
     <View style={{paddingVertical: vh(2), flex: 1}}>
-      <TouchableOpacity onPress={handleSkipPress} style={styles.btnSkip}>
+      <TouchableOpacity
+        testID="onboarding-skip"
+        onPress={() => navigation.navigate('Login')}
+        style={styles.btnSkip}>
         <Text style={styles.skipTxT}>{t('onboarding.skip')}</Text>
       </TouchableOpacity>
       <View style={[styles.upperView, centerAll]}>
@@ -70,7 +65,6 @@ const MainLayout: React.FC = () => {
       </View>
       <View style={styles.lowerView}>
         <FlatList
-          ref={flatListRef}
           data={InitPageData}
           horizontal
           showsHorizontalScrollIndicator={false}

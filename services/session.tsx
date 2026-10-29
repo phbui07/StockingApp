@@ -16,6 +16,10 @@ const ACCOUNTS_KEY = 'accountsStorage';
 const SESSION_KEY = 'userLoginStorage';
 const WELCOMED_KEY = 'stockline.welcomed';
 
+// Guests get a session (and their own portfolio) without an account. The id
+// has no "@", so it can never collide with a real account's email.
+export const GUEST_ID = 'guest';
+
 export type SessionErrorCode =
   | 'EMAIL_EXISTS'
   | 'WRONG_CREDENTIALS'
@@ -45,6 +49,8 @@ interface SessionValue {
   signUp: (name: string, email: string, password: string) => Promise<void>;
   logIn: (email: string, password: string) => Promise<{firstTime: boolean}>;
   logInWithGoogle: (profile: GoogleProfile) => Promise<{firstTime: boolean}>;
+  logInAsGuest: () => Promise<void>;
+  isGuest: boolean;
   logOut: () => Promise<void>;
   findAccount: (email: string) => AccountInterface | undefined;
   updateName: (name: string) => Promise<void>;
@@ -175,6 +181,18 @@ export const SessionProvider: React.FC<{children: React.ReactNode}> = ({
         }
         return startSession(account);
       },
+      logInAsGuest: async () => {
+        const profile: UserProfile = {
+          email: GUEST_ID,
+          name: null,
+          givenName: null,
+          familyName: null,
+          photoUrl: null,
+        };
+        setUser(profile);
+        await writeJSON(SESSION_KEY, profile);
+      },
+      isGuest: user?.email === GUEST_ID,
       logOut: async () => {
         setUser(null);
         await removeKey(SESSION_KEY);

@@ -172,9 +172,13 @@ export const parseQuote = (
   };
 };
 
-export const getQuotes = async (
+// Batched price series for many symbols; symbols Yahoo doesn't know are
+// left out.
+const fetchSpark = async (
   symbols: string[],
-): Promise<Record<string, Quote>> => {
+  range: string,
+  interval: string,
+) => {
   const unique = [...new Set(symbols)];
   const batches: string[][] = [];
   for (let i = 0; i < unique.length; i += SPARK_BATCH_SIZE) {
@@ -185,24 +189,108 @@ export const getQuotes = async (
       getJSON(
         `${QUERY1}/v7/finance/spark?symbols=${batch
           .map(encodeURIComponent)
-          .join(',')}&range=1d&interval=5m`,
+          .join(',')}&range=${range}&interval=${interval}`,
       ),
     ),
   );
-  const quotes: Record<string, Quote> = {};
+  const series: {symbol: string; meta: any; closes: unknown[]}[] = [];
   for (const data of responses) {
     for (const item of data?.spark?.result ?? []) {
-      const series = item?.response?.[0];
-      if (typeof series?.meta?.regularMarketPrice !== 'number') {
-        continue;
+      const response = item?.response?.[0];
+      if (typeof response?.meta?.regularMarketPrice === 'number') {
+        series.push({
+          symbol: item.symbol,
+          meta: response.meta,
+          closes: response.indicators?.quote?.[0]?.close ?? [],
+        });
       }
-      quotes[item.symbol] = parseQuote(
-        series.meta,
-        series.indicators?.quote?.[0]?.close,
-      );
     }
   }
+  return series;
+};
+
+export const getQuotes = async (
+  symbols: string[],
+): Promise<Record<string, Quote>> => {
+  const quotes: Record<string, Quote> = {};
+  for (const {symbol, meta, closes} of await fetchSpark(symbols, '1d', '5m')) {
+    quotes[symbol] = parseQuote(meta, closes);
+  }
   return quotes;
+};
+
+export type GrowthPeriod = 'day' | 'week' | 'month' | 'year';
+
+export interface Performance {
+  symbol: string;
+  name: string;
+  currency: string;
+  price: number;
+  changePercent: number; // over the period
+  spark: number[]; // prices across the period
+}
+
+const PERIOD_PARAMS: Record<GrowthPeriod, {range: string; interval: string}> = {
+  day: {range: '1d', interval: '15m'},
+  week: {range: '5d', interval: '30m'},
+  month: {range: '1mo', interval: '1d'},
+  year: {range: '1y', interval: '1wk'},
+};
+
+// Price change over a period for many symbols, measured from the close just
+// before the period started (the previous close, for a day).
+export const getPerformance = (
+  symbols: string[],
+  period: GrowthPeriod,
+  {fresh = false}: {fresh?: boolean} = {},
+) => {
+  const {range, interval} = PERIOD_PARAMS[period];
+  const key = `performance:${period}:${symbols.join(',')}`;
+  if (fresh) {
+    cache.delete(key);
+  }
+  return cached(
+    key,
+    period === 'day' ? 60 * 1000 : 15 * 60 * 1000,
+    async (): Promise<Performance[]> =>
+      (await fetchSpark(symbols, range, interval))
+        .map(({symbol, meta, closes}) => {
+          const spark = finiteValues(closes);
+          const base: number | undefined =
+            (period === 'day' ? meta.previousClose : undefined) ??
+            meta.chartPreviousClose ??
+            spark[0];
+          return {
+            symbol,
+            name: meta.longName || meta.shortName || symbol,
+            currency: meta.currency ?? 'USD',
+            price: meta.regularMarketPrice,
+            changePercent: base
+              ? (meta.regularMarketPrice / base - 1) * 100
+              : 0,
+            spark,
+          };
+        })
+        .filter(item => Number.isFinite(item.changePercent)),
+  );
+};
+
+const fetchSeries = async (symbol: string, range: string, interval: string) => {
+  const data = await getJSON(
+    `${QUERY1}/v8/finance/chart/${encodeURIComponent(
+      symbol,
+    )}?range=${range}&interval=${interval}`,
+  );
+  const result = data?.chart?.result?.[0];
+  if (!result) {
+    throw new MarketDataError(`No chart data for ${symbol}`);
+  }
+  const timestamps: number[] = result.timestamp ?? [];
+  const closes: unknown[] = result.indicators?.quote?.[0]?.close ?? [];
+  const points = timestamps
+    .map((ts, i) => ({t: ts * 1000, value: closes[i] as number}))
+    .filter(point => Number.isFinite(point.value));
+  return {points, meta: result.meta ?? {}};
 };
 
 export const getChart = (symbol: string, range: ChartRange) => {
@@ -212,21 +300,11 @@ export const getChart = (symbol: string, range: ChartRange) => {
     `chart:${symbol}:${range}`,
     ttl,
     async (): Promise<ChartData> => {
-      const data = await getJSON(
-        `${QUERY1}/v8/finance/chart/${encodeURIComponent(symbol)}?range=${
-          params.range
-        }&interval=${params.interval}`,
+      const {points, meta} = await fetchSeries(
+        symbol,
+        params.range,
+        params.interval,
       );
-      const result = data?.chart?.result?.[0];
-      if (!result) {
-        throw new MarketDataError(`No chart data for ${symbol}`);
-      }
-      const timestamps: number[] = result.timestamp ?? [];
-      const closes: unknown[] = result.indicators?.quote?.[0]?.close ?? [];
-      const points = timestamps
-        .map((ts, i) => ({t: ts * 1000, value: closes[i] as number}))
-        .filter(point => Number.isFinite(point.value));
-      const meta = result.meta ?? {};
       const baseline =
         range === '1D'
           ? meta.previousClose ?? meta.chartPreviousClose
@@ -240,6 +318,15 @@ export const getChart = (symbol: string, range: ChartRange) => {
     },
   );
 };
+
+// Five years of daily closes, for indicator statistics.
+export const getDailyHistory = (symbol: string) =>
+  cached(
+    `daily:${symbol}`,
+    6 * 60 * 60 * 1000,
+    async (): Promise<ChartPoint[]> =>
+      (await fetchSeries(symbol, '5y', '1d')).points,
+  );
 
 export const searchSymbols = (query: string) => {
   const q = query.trim();

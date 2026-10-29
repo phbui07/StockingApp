@@ -27,11 +27,16 @@ type Nav = NativeStackNavigationProp<any>;
 const Profile = () => {
   const navigation = useNavigation<Nav>();
   const {t} = useI18n();
-  const {user, logOut} = useSession();
+  const {user, isGuest, logOut} = useSession();
   const {data} = useUserData();
   const {quotes} = useQuotes(Object.keys(data.portfolio.positions));
   const total = summarize(data.portfolio, quotes).totalValue;
-  const name = user?.name || user?.email || '';
+  const name = isGuest ? t('guest.name') : user?.name || user?.email || '';
+  const logoutLabel = t(isGuest ? 'guest.exit' : 'profile.logout');
+  // Guests have no account to edit.
+  const menu = ProfileRenderView.filter(
+    item => !(isGuest && item.route === 'Account'),
+  );
 
   const openItem = (route: string) => {
     if (route === 'Transactions') {
@@ -42,20 +47,24 @@ const Profile = () => {
   };
 
   const confirmLogout = () =>
-    Alert.alert(t('profile.logout'), t('profile.logoutConfirm'), [
-      {text: t('common.cancel'), style: 'cancel'},
-      {
-        text: t('profile.logout'),
-        style: 'destructive',
-        onPress: async () => {
-          await logOut();
-          navigation.reset({
-            index: 1,
-            routes: [{name: 'Onboarding'}, {name: 'Login'}],
-          });
+    Alert.alert(
+      logoutLabel,
+      t(isGuest ? 'guest.exitConfirm' : 'profile.logoutConfirm'),
+      [
+        {text: t('common.cancel'), style: 'cancel'},
+        {
+          text: logoutLabel,
+          style: 'destructive',
+          onPress: async () => {
+            await logOut();
+            navigation.reset({
+              index: 1,
+              routes: [{name: 'Onboarding'}, {name: 'Login'}],
+            });
+          },
         },
-      },
-    ]);
+      ],
+    );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -73,7 +82,9 @@ const Profile = () => {
             <Text testID="profile-name" style={styles.name}>
               {name}
             </Text>
-            <Text style={styles.email}>{user?.email}</Text>
+            <Text style={styles.email}>
+              {isGuest ? t('guest.subtitle') : user?.email}
+            </Text>
           </View>
         </View>
         <View style={styles.balanceCard}>
@@ -93,7 +104,7 @@ const Profile = () => {
           </View>
         </TouchableOpacity>
         <View style={styles.container1}>
-          {ProfileRenderView.map(item => (
+          {menu.map(item => (
             <TouchableOpacity
               key={item.route}
               testID={`profile-${item.route}`}
@@ -115,7 +126,7 @@ const Profile = () => {
             testID="profile-logout"
             style={styles.logoutBtn}
             onPress={confirmLogout}>
-            <Text style={styles.logoutText}>{t('profile.logout')}</Text>
+            <Text style={styles.logoutText}>{logoutLabel}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
