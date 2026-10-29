@@ -10,7 +10,13 @@ import {
 import React, {useState} from 'react';
 import {container, vh, vw} from '../../services/styleSheet';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {addIcon, notiIcon, stocklineIcon, viewIcon} from '../../assets/svgXML';
+import {
+  addIcon,
+  nextIcon,
+  notiIcon,
+  stocklineIcon,
+  viewIcon,
+} from '../../assets/svgXML';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {MarketIndices, PopularStocks} from '../../services/renderData';
@@ -78,6 +84,16 @@ const Home = () => {
             />
           ))}
         </ScrollView>
+        <TouchableOpacity
+          testID="home-movers"
+          style={styles.moversCard}
+          onPress={() => navigation.navigate('TopMovers')}>
+          <View style={styles.moversText}>
+            <Text style={styles.nameText}>{t('home.movers')}</Text>
+            <Text style={styles.shortNameText}>{t('home.moversDesc')}</Text>
+          </View>
+          {nextIcon(vw(7), vw(7), '#FFED4B')}
+        </TouchableOpacity>
         <FollowView
           symbols={data.watchlist}
           quotes={quotes}
@@ -379,6 +395,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-end',
     marginTop: 10,
+  },
+  moversCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    columnGap: vw(3),
+    backgroundColor: '#2C2C2C',
+    borderRadius: 10,
+    padding: vw(4),
+    marginBottom: vh(1),
+  },
+  moversText: {
+    flexShrink: 1,
+    rowGap: 2,
   },
   stockViewContainer: {
     paddingVertical: vh(2),

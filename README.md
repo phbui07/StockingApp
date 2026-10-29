@@ -6,8 +6,12 @@ Stockline is a stock-tracking and practice-trading app built with React Native 0
 
 - **Live market data:** quotes, intraday sparklines, 1D–5Y charts, symbol search and news from Yahoo Finance. Prices refresh every 20 seconds while the app is in the foreground.
 - **Practice trading:** every account starts with $100,000 in virtual cash. Buy and sell orders fill instantly at the latest price. Holdings, average cost, unrealized and realized P&L, trade history and a portfolio performance chart are computed from your trades.
+- **Growth rankings** (Home → Growth rankings): about 100 large US companies ranked by price change over the latest day, week, month or year, showing either the top gainers or the top losers.
 - **Watchlist** you can search and sort, and **price alerts** that send a notification when a target is crossed while the app is open.
-- **On-device accounts:** sign up, log in, stay logged in, log out, change your name and password, verify a phone number, and reset a forgotten password with a 5-digit code delivered as a local notification.
+- **On-device accounts:** sign up, log in, or continue as a guest without an account. You stay logged in, and can log out, change your name and password, verify a phone number, and reset a forgotten password with a 5-digit code delivered as a local notification.
+- **Learn about a stock** (stock page → "Learn about this stock"):
+  - **AI explainer:** plain-language explanations from Google's Gemini (free tier). It never gives buy/sell recommendations.
+  - **Indicator history:** how often the price rose after simple indicators over the past few years, compared with the base rate.
 - **Vietnamese and English**, switchable in Profile → Language.
 - Optional Face ID or fingerprint confirmation for trades (Profile → Security).
 
@@ -73,11 +77,25 @@ npm run lint        # ESLint
 npm run typecheck   # TypeScript
 ```
 
+## AI explainer setup
+
+The AI explainer uses your own free Gemini API key:
+
+1. Create a key at [Google AI Studio](https://aistudio.google.com/apikey). It's free and needs no billing.
+2. In the app, open a stock's "Learn about this stock" page, or Profile → Settings, and paste the key. The app checks it with Google, then saves it on the device.
+
+The app uses `gemini-3.8-flash`. When that model's free daily quota runs out, it falls back to `gemini-3.5-flash-lite`. Each explanation is cached per stock and language for the day.
+
+Only public market data is sent to Google, never your account or portfolio. On the free tier, Google may use what's sent to improve its products.
+
+See [docs/PUBLISHING.md](docs/PUBLISHING.md) for the legal limits this feature is designed around, and what to change before publishing.
+
 ## How it's organized
 
 - `services/marketData.ts` is the only file that talks to Yahoo Finance. To switch data providers, rewrite it and keep its exported types.
 - `services/quoteStore.ts` shares live quotes between screens and handles polling.
 - `services/portfolio.ts` and `services/alerts.ts` hold the trading and alert rules as pure, unit-tested functions.
+- `services/aiExplainer.ts` builds the AI prompt from public data, calls Gemini, filters out advice and caches results. `services/indicators.ts` computes the indicator history.
 - `services/session.tsx` (accounts) and `services/userData.tsx` (portfolio, watchlist, alerts, settings per user) persist to AsyncStorage.
 - `locales/vi.ts` and `locales/en.ts` hold every UI string. TypeScript fails the build if a key is missing from either.
 

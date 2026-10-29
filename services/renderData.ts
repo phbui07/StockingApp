@@ -45,6 +45,31 @@ export const PopularStocks = [
   'NFLX',
 ];
 
+// Large, well-known US companies across sectors, ranked by the growth
+// screen. Sticking to big names keeps tiny, erratic stocks out of the list.
+// prettier-ignore
+export const GrowthUniverse = [
+  // Technology & communication
+  'AAPL', 'MSFT', 'NVDA', 'GOOGL', 'AMZN', 'META', 'TSLA', 'AVGO', 'ORCL',
+  'CRM', 'ADBE', 'AMD', 'INTC', 'CSCO', 'IBM', 'QCOM', 'TXN', 'AMAT', 'MU',
+  'NOW', 'INTU', 'PLTR', 'UBER', 'PANW', 'CRWD', 'ANET', 'NFLX', 'SHOP',
+  'SPOT', 'TSM', 'ARM', 'SNOW',
+  // Financials
+  'JPM', 'BAC', 'WFC', 'GS', 'MS', 'C', 'V', 'MA', 'AXP', 'BLK', 'SCHW',
+  'PYPL', 'BRK-B', 'COIN',
+  // Health care
+  'LLY', 'UNH', 'JNJ', 'PFE', 'MRK', 'ABBV', 'TMO', 'ABT', 'AMGN', 'GILD',
+  'ISRG', 'CVS', 'BMY',
+  // Consumer
+  'WMT', 'COST', 'HD', 'MCD', 'NKE', 'SBUX', 'KO', 'PEP', 'PG', 'DIS', 'LOW',
+  'TGT', 'BKNG', 'ABNB', 'CMG', 'PM', 'F', 'GM', 'MAR',
+  // Industrials, energy, utilities & materials
+  'BA', 'CAT', 'GE', 'HON', 'UPS', 'DE', 'LMT', 'RTX', 'UNP', 'MMM', 'DAL',
+  'XOM', 'CVX', 'COP', 'NEE', 'LIN',
+  // Telecom & media
+  'T', 'VZ', 'TMUS', 'CMCSA',
+];
+
 export const ProfileRenderView: {
   label: TKey;
   icon: React.ReactNode;

@@ -17,16 +17,20 @@ import {
 } from '../../services/notifications';
 import {useI18n} from '../../services/i18n';
 import {formatMoney} from '../../services/format';
+import {getApiKey, removeApiKey} from '../../services/aiExplainer';
 import ScreenHeader from '../../components/ScreenHeader';
+import ApiKeyForm from '../../components/ApiKeyForm';
 
 const Settings = () => {
   const {t} = useI18n();
   const {data, updateSettings, resetPortfolio} = useUserData();
   const [notificationsOn, setNotificationsOn] = useState<boolean | null>(null);
+  const [hasAiKey, setHasAiKey] = useState(false);
   const startingCash = data.settings.startingCash;
 
   useEffect(() => {
     hasNotificationPermission().then(setNotificationsOn);
+    getApiKey().then(key => setHasAiKey(!!key));
   }, []);
 
   const enableNotifications = async () => {
@@ -105,6 +109,36 @@ const Settings = () => {
             onPress={confirmReset}>
             <Text style={styles.dangerText}>{t('settings.reset')}</Text>
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.card}>
+          <View style={styles.row}>
+            <Text style={styles.title}>{t('settings.ai')}</Text>
+            {hasAiKey ? (
+              <Text style={styles.onText}>{t('settings.aiKeySet')}</Text>
+            ) : null}
+          </View>
+          <Text style={styles.desc}>{t('settings.aiDesc')}</Text>
+          {hasAiKey ? (
+            <TouchableOpacity
+              testID="settings-ai-remove"
+              style={styles.smallBtn}
+              onPress={async () => {
+                await removeApiKey();
+                setHasAiKey(false);
+              }}>
+              <Text style={styles.smallBtnText}>
+                {t('settings.aiRemoveKey')}
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <ApiKeyForm
+              onSaved={() => {
+                setHasAiKey(true);
+                Alert.alert(t('common.success'), t('settings.aiKeySaved'));
+              }}
+            />
+          )}
         </View>
 
         <View style={styles.card}>

@@ -3,6 +3,7 @@ import {
   getChart,
   getCompanyInfo,
   getNews,
+  getPerformance,
   getQuotes,
   isTradable,
   logoUrl,
@@ -254,4 +255,45 @@ it('logos and tradability', () => {
   expect(isTradable({...base, type: 'INDEX'})).toBe(false);
   expect(isTradable({...base, currency: 'VND'})).toBe(false);
   expect(isTradable(undefined)).toBe(false);
+});
+
+it('getPerformance measures each period from the close before it began', async () => {
+  fetchMock.mockImplementation((url: string) => {
+    const symbols = decodeURIComponent(
+      url.split('symbols=')[1].split('&')[0],
+    ).split(',');
+    return json({
+      spark: {
+        result: symbols.map(symbol => ({
+          symbol,
+          response: [
+            {
+              meta: {
+                symbol,
+                longName: `${symbol} Inc.`,
+                currency: 'USD',
+                regularMarketPrice: 120,
+                previousClose: 100,
+                chartPreviousClose: url.includes('range=1d') ? 100 : 80,
+              },
+              indicators: {quote: [{close: [90, null, 120]}]},
+            },
+          ],
+        })),
+      },
+    });
+  });
+  const [day] = await getPerformance(['AAPL'], 'day');
+  expect(day).toMatchObject({symbol: 'AAPL', spark: [90, 120]});
+  expect(day.changePercent).toBeCloseTo(20);
+  expect(fetchMock.mock.calls[0][0]).toContain('range=1d&interval=15m');
+
+  const [year] = await getPerformance(['AAPL'], 'year');
+  expect(year.changePercent).toBeCloseTo(50);
+  expect(fetchMock.mock.calls[1][0]).toContain('range=1y&interval=1wk');
+
+  await getPerformance(['AAPL'], 'year');
+  expect(fetchMock).toHaveBeenCalledTimes(2); // cached
+  await getPerformance(['AAPL'], 'year', {fresh: true});
+  expect(fetchMock).toHaveBeenCalledTimes(3);
 });

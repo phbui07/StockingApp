@@ -31,6 +31,8 @@ import OtpVerify from './views/init/OtpVerify';
 import PasswordModifying from './views/init/PasswordModifying';
 import Search from './views/market/Search';
 import Alerts from './views/market/Alerts';
+import Insights from './views/market/Insights';
+import TopMovers from './views/market/TopMovers';
 import Account from './views/profile/Account';
 import Security from './views/profile/Security';
 import Language from './views/profile/Language';
@@ -161,6 +163,8 @@ const RootNavigator = () => {
         <Stack.Screen name="BuyingVerify" component={BuyingVerify} />
         <Stack.Screen name="Search" component={Search} />
         <Stack.Screen name="Alerts" component={Alerts} />
+        <Stack.Screen name="Insights" component={Insights} />
+        <Stack.Screen name="TopMovers" component={TopMovers} />
         <Stack.Screen name="Watchlist" component={Watchlist} />
         {/* Profile */}
         <Stack.Screen name="Account" component={Account} />

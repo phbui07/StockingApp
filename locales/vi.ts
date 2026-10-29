@@ -56,6 +56,8 @@ const vi = {
   'login.googleUnavailable':
     'Đăng nhập Google chưa được cấu hình trên thiết bị này.',
 
+  'login.guest': 'Tiếp tục với tư cách khách',
+
   // Sign up
   'signup.title': 'Tham gia Stockline',
   'signup.subtitle': 'Bắt đầu hành trình đầu tư với $100.000 tiền ảo',
@@ -202,6 +204,7 @@ const vi = {
   'detail.details': 'Chi tiết',
   'detail.news': 'Tin tức',
   'detail.website': 'TRANG WEB:',
+  'detail.since': 'TỪ NĂM:',
   'detail.employees': 'NHÂN VIÊN:',
   'detail.headquarters': 'TRỤ SỞ CHÍNH:',
   'detail.sector': 'NGÀNH:',
@@ -262,6 +265,99 @@ const vi = {
   'order.authPrompt': 'Xác thực để {side} {symbol}',
   'order.authFailed': 'Xác thực không thành công. Lệnh chưa được đặt.',
 
+  // Growth rankings
+  'home.movers': 'Xếp hạng tăng trưởng',
+  'home.moversDesc': 'Cổ phiếu tăng mạnh nhất theo ngày, tuần, tháng, năm',
+  'movers.title': 'Xếp hạng tăng trưởng',
+  'movers.gainers': 'Tăng mạnh nhất',
+  'movers.losers': 'Giảm mạnh nhất',
+  'movers.day': 'Ngày',
+  'movers.week': 'Tuần',
+  'movers.month': 'Tháng',
+  'movers.year': 'Năm',
+  'movers.periodDay': 'phiên gần nhất',
+  'movers.periodWeek': '1 tuần qua',
+  'movers.periodMonth': '1 tháng qua',
+  'movers.periodYear': '1 năm qua',
+  'movers.intro':
+    'Xếp hạng {count} công ty lớn của Mỹ theo mức thay đổi giá trong {period}.',
+  'movers.caveat':
+    'Mức tăng trong quá khứ không có nghĩa là giá sẽ tiếp tục tăng, và những mã biến động mạnh nhất thường cũng rủi ro nhất. Đây là bảng xếp hạng dữ liệu, không phải khuyến nghị.',
+
+  // Learn: AI explainer and indicator history
+  'detail.learnMore': 'Tìm hiểu cổ phiếu này',
+  'detail.learnMoreDesc': 'AI giải thích và lịch sử các chỉ báo',
+  'insights.title': 'Tìm hiểu {symbol}',
+  'insights.aiTitle': 'AI giải thích',
+  'insights.aiIntro':
+    'AI đọc dữ liệu giá, các con số chính và tin tức gần đây rồi giải thích bằng ngôn ngữ dễ hiểu.',
+  'insights.explain': 'Giải thích cổ phiếu này',
+  'insights.regenerate': 'Tạo lại',
+  'insights.loading': 'AI đang đọc dữ liệu...',
+  'insights.summary': 'Tổng quan',
+  'insights.priceAction': 'Diễn biến giá',
+  'insights.valuation': 'Các con số chính',
+  'insights.news': 'Tin tức gần đây',
+  'insights.positives': 'Điểm tích cực',
+  'insights.risks': 'Rủi ro cần lưu ý',
+  'insights.questions': 'Câu hỏi để bạn tự tìm hiểu',
+  'insights.terms': 'Thuật ngữ',
+  'insights.label':
+    'Nội dung do AI ({model}) tạo lúc {time}, chỉ nhằm mục đích giáo dục; không phải tư vấn đầu tư chứng khoán. AI có thể sai, hãy kiểm tra lại.',
+  'insights.removed': 'Đã ẩn {count} câu mang tính khuyến nghị.',
+  'insights.noticeTitle': 'Giải thích bằng AI',
+  'insights.noticeBody':
+    'Phần giải thích do AI (Google Gemini) tạo, chỉ nhằm mục đích giáo dục, không phải tư vấn đầu tư. AI có thể sai.\n\nChỉ dữ liệu công khai về cổ phiếu được gửi tới Google; tài khoản và danh mục của bạn không được gửi đi. Ở gói miễn phí, Google có thể dùng dữ liệu này để cải thiện sản phẩm.',
+  'insights.noticeContinue': 'Tiếp tục',
+  'insights.needKey':
+    'AI cần một khóa API Gemini miễn phí. Tạo khóa tại Google AI Studio rồi dán vào đây.',
+  'insights.getKey': 'Lấy khóa miễn phí',
+  'insights.keyPlaceholder': 'Dán khóa API',
+  'insights.saveKey': 'Lưu khóa',
+  'insights.checkingKey': 'Đang kiểm tra khóa...',
+  'insights.errorInvalidKey': 'Khóa API không hợp lệ. Hãy kiểm tra lại.',
+  'insights.errorQuota': 'Đã hết lượt miễn phí hôm nay. Hãy thử lại sau.',
+  'insights.errorBlocked': 'AI từ chối trả lời yêu cầu này.',
+  'insights.errorNetwork':
+    'Không kết nối được với AI. Kiểm tra mạng và thử lại.',
+  'insights.errorBad': 'AI trả về kết quả không đọc được. Hãy thử lại.',
+  'insights.positionTitle': 'Trong danh mục ảo của bạn',
+  'insights.positionDesc':
+    'Bạn có {shares} cổ phiếu, chiếm {percent} tổng giá trị danh mục. Thông tin này chỉ được tính trên máy và không gửi cho AI.',
+  'insights.indicatorsTitle': 'Chỉ báo kỹ thuật và lịch sử',
+  'insights.indicatorsIntro':
+    'Từ {from} đến {to}, vào những ngày tình huống này xảy ra, giá {horizon} phiên sau (khoảng 1 tháng) cao hơn bao nhiêu phần trăm số lần? Hãy so với mức cơ sở của mọi ngày.',
+  'insights.baseRate': 'Mọi ngày (mức cơ sở)',
+  'insights.higherAfter': 'Cao hơn {rate} số lần · TB {avg} · {count} ngày',
+  'insights.fewSamples': 'ít trường hợp, khó rút ra kết luận',
+  'insights.never': 'Không xảy ra trong giai đoạn này',
+  'insights.now': 'Hiện tại: đúng',
+  'insights.notNow': 'Hiện tại: không',
+  'insights.caveat':
+    'Kết quả mang tính giả định, dựa trên dữ liệu quá khứ của chính mã này, và các giai đoạn chồng lấn nhau nên không độc lập. Không phản ánh kết quả đầu tư thực tế và không đảm bảo kết quả trong tương lai.',
+  'insights.notEnoughData': 'Chưa đủ dữ liệu lịch sử để tính.',
+  'indicator.aboveSma200': 'Giá trên đường trung bình 200 ngày',
+  'indicator.aboveSma200Desc':
+    'Đường trung bình 200 ngày là giá đóng cửa trung bình của khoảng 10 tháng giao dịch, thường dùng để xem xu hướng dài hạn.',
+  'indicator.smaCross': 'Trung bình 50 ngày trên trung bình 200 ngày',
+  'indicator.smaCrossDesc':
+    'Khi đường ngắn hạn nằm trên đường dài hạn, giá gần đây cao hơn mức trung bình dài hạn. Lúc đường ngắn hạn cắt lên được gọi là "giao cắt vàng".',
+  'indicator.rsiBelow30': 'RSI dưới 30 ("quá bán")',
+  'indicator.rsiBelow30Desc':
+    'RSI (0–100) so sánh mức tăng và mức giảm trong 14 phiên. Dưới 30 nghĩa là giá vừa giảm nhanh.',
+  'indicator.rsiAbove70': 'RSI trên 70 ("quá mua")',
+  'indicator.rsiAbove70Desc':
+    'RSI trên 70 nghĩa là giá vừa tăng nhanh trong thời gian ngắn.',
+  'indicator.drawdown10': 'Thấp hơn đỉnh 1 năm trên 10%',
+  'indicator.drawdown10Desc':
+    'Giá hiện tại thấp hơn mức đóng cửa cao nhất của 252 phiên gần nhất hơn 10%.',
+  'settings.ai': 'AI giải thích',
+  'settings.aiDesc':
+    'Dùng khóa API Gemini miễn phí của bạn. Khóa chỉ được lưu trên thiết bị này.',
+  'settings.aiKeySet': 'Đã có khóa',
+  'settings.aiRemoveKey': 'Xóa khóa',
+  'settings.aiKeySaved': 'Đã lưu khóa API',
+
   // Biometrics
   'bio.notAvailable': 'Thiết bị không hỗ trợ xác thực sinh trắc học',
   'bio.failed': 'Xác thực không thành công',
@@ -306,6 +402,13 @@ const vi = {
   'profile.faq': 'Câu hỏi thường gặp',
   'profile.logout': 'Đăng xuất',
   'profile.logoutConfirm': 'Bạn có chắc muốn đăng xuất?',
+
+  // Guest mode
+  'guest.name': 'Khách',
+  'guest.subtitle': 'Dữ liệu chỉ được lưu trên thiết bị này',
+  'guest.exit': 'Thoát chế độ khách',
+  'guest.exitConfirm':
+    'Danh mục của khách vẫn được lưu trên thiết bị này. Chọn "Tiếp tục với tư cách khách" để quay lại.',
 
   // Account details
   'account.title': 'Thông tin tài khoản',
